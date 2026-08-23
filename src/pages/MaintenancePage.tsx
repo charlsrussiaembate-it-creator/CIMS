@@ -28,6 +28,7 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterComputer, setFilterComputer] = useState("All");
   const [showModal, setShowModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Maintenance | null>(null);
   const [form, setForm] = useState<Omit<Maintenance, "id">>({ ...emptyForm(), computerId: data.computers[0]?.id || "" });
 
@@ -65,9 +66,9 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   }
 
   function handleDelete(id: string) {
-    if (!window.confirm(`Delete maintenance record ${id}? This action cannot be undone.`)) return;
     setData({ ...data, maintenance: data.maintenance.filter(m => m.id !== id) });
     addLog("admin", "Admin", "Maintenance Deleted", `Deleted maintenance record ${id}`);
+    setDeleteConfirm(null);
   }
 
   function advanceStatus(m: Maintenance) {
@@ -187,7 +188,7 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
                         {m.status !== "Cancelled" && m.status !== "Completed" && (
                           <button onClick={() => cancelMaintenance(m)} className="text-xs text-[#64748b] hover:text-amber-400 transition-colors px-1.5 py-0.5">Cancel</button>
                         )}
-                        <button onClick={() => handleDelete(m.id)} className="text-xs text-[#64748b] hover:text-red-400 transition-colors px-1.5 py-0.5">Del</button>
+                        <button onClick={() => setDeleteConfirm(m.id)} className="text-xs text-[#64748b] hover:text-red-400 transition-colors px-1.5 py-0.5">Del</button>
                       </div>
                     </div>
                   </td>
@@ -248,6 +249,21 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
               </button>
               <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
             </div>
+          </div>
+        </Modal>
+      )}
+      {deleteConfirm && (
+        <Modal title="Delete Maintenance Record" onClose={() => setDeleteConfirm(null)}>
+          <p className="text-sm text-[#94a3b8]">
+            Delete <span className="font-mono text-white">{deleteConfirm}</span>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 mt-6">
+            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-400 transition-colors">
+              Delete
+            </button>
+            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">
+              Cancel
+            </button>
           </div>
         </Modal>
       )}

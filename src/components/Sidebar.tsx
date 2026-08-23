@@ -1,4 +1,6 @@
 import type { AdminPage, StaffPage, UserRole } from "../App";
+import { useState } from "react";
+import Modal from "./Modal";
 
 interface SidebarProps {
   role: UserRole;
@@ -35,6 +37,7 @@ const staffPerms = [
 ];
 
 export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const currentPage = role === "admin" ? adminPage : staffPage;
   const nav = role === "admin" ? adminNav : staffNav;
 
@@ -44,7 +47,7 @@ export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staff
   }
 
   function handleLogout() {
-    if (window.confirm("Are you sure you want to log out?")) onLogout();
+    setShowLogoutConfirm(true);
   }
 
   return (
@@ -114,6 +117,27 @@ export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staff
           Log out
         </button>
       </div>
+      {showLogoutConfirm && (
+        <Modal title="Confirm Logout" onClose={() => setShowLogoutConfirm(false)}>
+          <p className="text-sm text-[#94a3b8]">Are you sure you want to log out?</p>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(false)}
+              className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-400 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
+        </Modal>
+      )}
     </aside>
   );
 }
