@@ -2,7 +2,6 @@ import type { AdminPage, StaffPage, UserRole } from "../App";
 
 interface SidebarProps {
   role: UserRole;
-  setRole: (r: UserRole) => void;
   adminPage: AdminPage;
   setAdminPage: (p: AdminPage) => void;
   staffPage: StaffPage;
@@ -34,7 +33,7 @@ const staffPerms = [
   { label: "Edit/delete records", ok: false },
 ];
 
-export default function Sidebar({ role, setRole, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
+export default function Sidebar({ role, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
   const currentPage = role === "admin" ? adminPage : staffPage;
   const nav = role === "admin" ? adminNav : staffNav;
 
@@ -53,25 +52,6 @@ export default function Sidebar({ role, setRole, adminPage, setAdminPage, staffP
             <div className="text-sm font-semibold text-white leading-tight">CIMS</div>
             <div className="text-[10px] text-[#64748b] leading-tight">St. Rita's College</div>
           </div>
-        </div>
-      </div>
-
-      {/* Role toggle */}
-      <div className="px-4 py-3 border-b border-[#1e293b]">
-        <div className="text-[10px] uppercase tracking-widest text-[#475569] mb-2 px-1">Role</div>
-        <div className="flex rounded-md overflow-hidden border border-[#334155]">
-          <button
-            onClick={() => setRole("admin")}
-            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${role === "admin" ? "bg-[#0ea5e9] text-[#0f172a]" : "text-[#64748b] hover:text-[#94a3b8]"}`}
-          >
-            Admin
-          </button>
-          <button
-            onClick={() => setRole("staff")}
-            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${role === "staff" ? "bg-[#0ea5e9] text-[#0f172a]" : "text-[#64748b] hover:text-[#94a3b8]"}`}
-          >
-            Staff
-          </button>
         </div>
       </div>
 

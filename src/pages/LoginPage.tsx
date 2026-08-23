@@ -5,6 +5,11 @@ interface LoginPageProps {
   onLogin: (role: "admin" | "staff") => void;
 }
 
+const demoAccounts = {
+  "admin@demo.com": { password: "admin123", role: "admin" as const },
+  "staff@demo.com": { password: "staff123", role: "staff" as const },
+};
+
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,8 +23,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       return;
     }
 
-    const role = email.toLowerCase().includes("staff") ? "staff" : "admin";
-    onLogin(role);
+    const account = demoAccounts[email.trim().toLowerCase() as keyof typeof demoAccounts];
+
+    if (!account || account.password !== password) {
+      setError("Use one of the demo accounts shown below.");
+      return;
+    }
+
+    onLogin(account.role);
   }
 
   return (
@@ -94,7 +105,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </form>
 
           <p className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-[#647891]">
-            Use an email containing <span className="font-mono text-[#91a6bd]">staff</span> to preview the staff portal.
+            Demo admin: <span className="font-mono text-[#91a6bd]">admin@demo.com / admin123</span>
+            <br />
+            Demo staff: <span className="font-mono text-[#91a6bd]">staff@demo.com / staff123</span>
           </p>
         </div>
       </section>

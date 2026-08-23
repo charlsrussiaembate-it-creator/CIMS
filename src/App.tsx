@@ -41,7 +41,6 @@ export default function App() {
     <div className="flex h-full">
       <Sidebar
         role={role}
-        setRole={setRole}
         adminPage={adminPage}
         setAdminPage={setAdminPage}
         staffPage={staffPage}
