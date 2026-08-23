@@ -2,6 +2,7 @@ import type { AdminPage, StaffPage, UserRole } from "../App";
 
 interface SidebarProps {
   role: UserRole;
+  onLogout: () => void;
   adminPage: AdminPage;
   setAdminPage: (p: AdminPage) => void;
   staffPage: StaffPage;
@@ -33,13 +34,17 @@ const staffPerms = [
   { label: "Edit/delete records", ok: false },
 ];
 
-export default function Sidebar({ role, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
+export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
   const currentPage = role === "admin" ? adminPage : staffPage;
   const nav = role === "admin" ? adminNav : staffNav;
 
   function handleNav(id: string) {
     if (role === "admin") setAdminPage(id as AdminPage);
     else setStaffPage(id as StaffPage);
+  }
+
+  function handleLogout() {
+    if (window.confirm("Are you sure you want to log out?")) onLogout();
   }
 
   return (
@@ -101,6 +106,13 @@ export default function Sidebar({ role, adminPage, setAdminPage, staffPage, setS
           </ul>
         )}
         <div className="text-[10px] text-[#334155] mt-3">CIMS v1.0 · St. Rita's College</div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-4 w-full rounded-md border border-[#334155] px-3 py-2 text-left text-xs font-medium text-[#94a3b8] transition-colors hover:border-[#64748b] hover:bg-[#1e293b] hover:text-white"
+        >
+          Log out
+        </button>
       </div>
     </aside>
   );

@@ -63,6 +63,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   }
 
   function handleDelete(id: string) {
+    if (!window.confirm(`Delete problem ${id}? This action cannot be undone.`)) return;
     setData({ ...data, problems: data.problems.filter(p => p.id !== id) });
     addLog("admin", "Admin", "Problem Deleted", `Deleted problem ${id}`);
   }

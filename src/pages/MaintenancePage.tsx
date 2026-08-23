@@ -65,6 +65,7 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   }
 
   function handleDelete(id: string) {
+    if (!window.confirm(`Delete maintenance record ${id}? This action cannot be undone.`)) return;
     setData({ ...data, maintenance: data.maintenance.filter(m => m.id !== id) });
     addLog("admin", "Admin", "Maintenance Deleted", `Deleted maintenance record ${id}`);
   }

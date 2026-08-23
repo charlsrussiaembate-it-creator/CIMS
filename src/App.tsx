@@ -41,6 +41,7 @@ export default function App() {
     <div className="flex h-full">
       <Sidebar
         role={role}
+        onLogout={() => setIsAuthenticated(false)}
         adminPage={adminPage}
         setAdminPage={setAdminPage}
         staffPage={staffPage}

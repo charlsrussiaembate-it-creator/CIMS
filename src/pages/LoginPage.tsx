@@ -11,12 +11,16 @@ const demoAccounts = {
 };
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => localStorage.getItem("cims-remembered-email") ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("cims-remembered-email")));
+  const [showPassword, setShowPassword] = useState(false);
+  const [notice, setNotice] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setNotice("");
 
     if (!email.trim() || !password.trim()) {
       setError("Enter your email and password to continue.");
@@ -30,7 +34,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       return;
     }
 
+    if (rememberMe) localStorage.setItem("cims-remembered-email", email.trim());
+    else localStorage.removeItem("cims-remembered-email");
+
     onLogin(account.role);
+  }
+
+  function handleForgotPassword() {
+    setError("");
+    setNotice(email.trim() ? "Demo mode: use the password shown below to sign in." : "Enter your email to request a password reset.");
   }
 
   return (
@@ -87,17 +99,43 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#9db0c6]">Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={event => { setPassword(event.target.value); setError(""); }}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                className="w-full rounded-lg border border-[#30445d] bg-[#111c2d] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-[#52657d] focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={event => { setPassword(event.target.value); setError(""); setNotice(""); }}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  className="w-full rounded-lg border border-[#30445d] bg-[#111c2d] px-4 py-3 pr-20 text-sm text-white outline-none transition-colors placeholder:text-[#52657d] focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(value => !value)}
+                  className="absolute inset-y-0 right-3 text-xs font-medium text-[#8193aa] hover:text-white"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </label>
 
+            <div className="flex items-center justify-between gap-4">
+              <label className="flex items-center gap-2 text-xs text-[#8193aa]">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={event => setRememberMe(event.target.checked)}
+                  className="h-4 w-4 accent-[#0ea5e9]"
+                />
+                Remember me
+              </label>
+              <button type="button" onClick={handleForgotPassword} className="text-xs font-medium text-[#38bdf8] hover:text-white">
+                Forgot password?
+              </button>
+            </div>
+
             {error && <p className="text-sm text-rose-400" role="alert">{error}</p>}
+            {notice && <p className="text-sm text-[#7dd3fc]" role="status">{notice}</p>}
 
             <button type="submit" className="w-full rounded-lg bg-[#0ea5e9] px-4 py-3 text-sm font-semibold text-[#07111e] transition-colors hover:bg-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8] focus:ring-offset-2 focus:ring-offset-[#0b1120]">
               Sign in
