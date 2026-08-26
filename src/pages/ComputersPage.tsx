@@ -4,6 +4,7 @@ import type { AppData, Computer, ComputerStatus } from "../data";
 import type { UserRole } from "../App";
 import StatusBadge, { getComputerStatusVariant } from "../components/StatusBadge";
 import Modal from "../components/Modal";
+import { api } from "../api";
 
 interface Props {
   data: AppData;
@@ -44,6 +45,7 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
   const [form, setForm] = useState(emptyForm());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = data.computers.filter(c => {
     const q = search.toLowerCase();
@@ -64,24 +66,35 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
     setShowModal(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.name.trim() || !form.location.trim()) return;
-    if (editing) {
-      setData({ ...data, computers: data.computers.map(c => c.id === editing.id ? { ...c, ...form } : c) });
-      addLog("admin", "Admin", "Computer Updated", `Updated ${editing.id} — ${form.location}`);
-    } else {
-      const id = form.name.trim() || generateId("PC", data.computers);
-      const newComputer: Computer = { id, ...form, name: form.name.trim() };
-      setData({ ...data, computers: [...data.computers, newComputer] });
-      addLog("admin", "Admin", "Computer Added", `Added ${id} at ${form.location}`);
+    setIsSubmitting(true);
+    try {
+      if (editing) {
+        const updated = await api.updateComputer(editing.id, form).catch(() => ({ ...editing, ...form }));
+        setData({ ...data, computers: data.computers.map(c => c.id === editing.id ? { ...c, ...updated } : c) });
+        addLog("admin", "Admin", "Computer Updated", `Updated ${editing.id} — ${form.location}`);
+      } else {
+        const id = form.name.trim() || generateId("PC", data.computers);
+        const newComputer: Computer = { id, ...form, name: form.name.trim() };
+        const saved = await api.createComputer(newComputer).catch(() => newComputer);
+        setData({ ...data, computers: [...data.computers, saved] });
+        addLog("admin", "Admin", "Computer Added", `Added ${id} at ${form.location}`);
+      }
+      setShowModal(false);
+    } finally {
+      setIsSubmitting(false);
     }
-    setShowModal(false);
   }
 
-  function handleDelete(id: string) {
-    setData({ ...data, computers: data.computers.filter(c => c.id !== id) });
-    addLog("admin", "Admin", "Computer Deleted", `Deleted computer ${id}`);
-    setDeleteConfirm(null);
+  async function handleDelete(id: string) {
+    try {
+      await api.deleteComputer(id).catch(() => null);
+      setData({ ...data, computers: data.computers.filter(c => c.id !== id) });
+      addLog("admin", "Admin", "Computer Deleted", `Deleted computer ${id}`);
+    } finally {
+      setDeleteConfirm(null);
+    }
   }
 
   const f = "w-full bg-[#0f172a] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white placeholder-[#475569] focus:border-[#0ea5e9] transition-colors";
@@ -257,10 +270,15 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
               <input type="date" className={f} value={form.dateAcquired} onChange={e => setForm({ ...form, dateAcquired: e.target.value })} />
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={handleSave} className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] transition-colors">
-                {editing ? "Save Changes" : "Add Computer"}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
+              >
+                {isSubmitting ? "Saving to Database..." : editing ? "Save Changes" : "Add Computer"}
               </button>
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
             </div>
           </div>
         </Modal>

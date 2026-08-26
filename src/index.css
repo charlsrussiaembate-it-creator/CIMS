@@ -80,3 +80,166 @@ select:focus,
 textarea:focus {
   outline: none;
 }
+
+/* Keep the authenticated workspace aligned with the light login theme. */
+.cims-app {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.cims-app [class~="bg-[#0b1425]"],
+.cims-app [class~="bg-[#0f172a]"] {
+  background-color: #f5f5f7;
+}
+
+.cims-app [class~="bg-[#1e293b]"] {
+  background-color: #ffffff;
+}
+
+.cims-app [class~="bg-[#1e3a5f]"] {
+  background-color: #eaf3ff;
+}
+
+.cims-app [class~="bg-[#0ea5e9]"] {
+  background-color: #0071e3;
+}
+
+.cims-app [class~="text-white"],
+.cims-app [class~="text-[#f1f5f9]"] {
+  color: #1d1d1f;
+}
+
+.cims-app [class~="text-[#94a3b8]"],
+.cims-app [class~="text-[#64748b]"],
+.cims-app [class~="text-[#475569]"] {
+  color: #6e6e73;
+}
+
+.cims-app [class~="text-[#0f172a]"] {
+  color: #ffffff;
+}
+
+.cims-app [class~="text-[#0ea5e9]"],
+.cims-app [class~="text-[#38bdf8]"] {
+  color: #0071e3;
+}
+
+.cims-app [class~="border-[#1e293b]"],
+.cims-app [class~="border-[#334155]"],
+.cims-app [class~="divide-[#1e293b]"] {
+  border-color: #d2d2d7;
+}
+
+.cims-app [class~="bg-[#0f172a]"] {
+  background-color: #f5f5f7;
+}
+
+.cims-app input[class~="bg-[#0f172a]"],
+.cims-app textarea[class~="bg-[#0f172a]"],
+.cims-app select[class~="bg-[#1e293b]"] {
+  color: #1d1d1f;
+}
+
+.cims-app input[class~="placeholder-[#475569]"]::placeholder,
+.cims-app textarea[class~="placeholder-[#475569]"]::placeholder {
+  color: #86868b;
+}
+
+.cims-app [class~="hover:bg-[#1e293b]"]:hover {
+  background-color: #f5f5f7;
+}
+
+.cims-app [class~="hover:bg-[#0f172a]"]:hover {
+  background-color: #f5f5f7;
+}
+
+.cims-app [class~="hover:text-white"]:hover {
+  color: #1d1d1f;
+}
+
+.cims-app [class~="bg-red-500"][class~="text-white"] {
+  color: #ffffff;
+}
+
+/* =====================================================
+   SEAMLESS APP TRANSITIONS
+===================================================== */
+
+/* Page View Transition */
+.page-enter {
+  animation: pageFadeSlide 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+@keyframes pageFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Auth View Crossfade */
+.auth-view-enter {
+  animation: authCrossfade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+@keyframes authCrossfade {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Modal Transitions */
+.modal-backdrop-enter {
+  animation: backdropFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-dialog-enter {
+  animation: dialogPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+@keyframes dialogPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Global Smooth Transitions */
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.18s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+tr {
+  transition: background-color 0.15s ease;
+}

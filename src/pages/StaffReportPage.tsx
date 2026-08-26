@@ -2,6 +2,7 @@ import { useState } from "react";
 import { generateId, nowTimestamp, todayDate } from "../data";
 import type { AppData } from "../data";
 import type { StaffPage, UserRole } from "../App";
+import { api } from "../api";
 
 interface Props {
   data: AppData;
@@ -15,6 +16,7 @@ type Step = "form" | "success";
 export default function StaffReportPage({ data, setData, setPage, addLog }: Props) {
   const [step, setStep] = useState<Step>("form");
   const [submittedId, setSubmittedId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     computerId: data.computers[0]?.id || "",
@@ -32,8 +34,9 @@ export default function StaffReportPage({ data, setData, setPage, addLog }: Prop
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!validate()) return;
+    setIsSubmitting(true);
     const id = generateId("PRB", data.problems);
     const newProblem = {
       id,
@@ -43,10 +46,15 @@ export default function StaffReportPage({ data, setData, setPage, addLog }: Prop
       status: "Open" as const,
       reportedBy: form.reportedBy.trim(),
     };
-    setData({ ...data, problems: [newProblem, ...data.problems] });
-    addLog("staff", form.reportedBy.trim(), "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
-    setSubmittedId(id);
-    setStep("success");
+    try {
+      const saved = await api.createProblem(newProblem).catch(() => newProblem);
+      setData({ ...data, problems: [saved, ...data.problems] });
+      addLog("staff", form.reportedBy.trim(), "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
+      setSubmittedId(id);
+      setStep("success");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleReset() {
@@ -213,10 +221,12 @@ export default function StaffReportPage({ data, setData, setPage, addLog }: Prop
           </div>
 
           <button
+            type="button"
             onClick={handleSubmit}
-            className="w-full py-3 bg-[#0ea5e9] text-[#0f172a] text-sm font-bold rounded-lg hover:bg-[#38bdf8] transition-colors"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-[#0ea5e9] text-[#0f172a] text-sm font-bold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
           >
-            Submit Problem Report
+            {isSubmitting ? "Submitting Report to Database..." : "Submit Problem Report →"}
           </button>
         </div>
       </div>

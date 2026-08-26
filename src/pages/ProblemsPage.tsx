@@ -4,6 +4,7 @@ import type { AppData, Problem, ProblemStatus } from "../data";
 import type { UserRole } from "../App";
 import StatusBadge, { getProblemStatusVariant } from "../components/StatusBadge";
 import Modal from "../components/Modal";
+import { api } from "../api";
 
 interface Props {
   data: AppData;
@@ -28,6 +29,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Problem | null>(null);
   const [form, setForm] = useState({ computerId: data.computers[0]?.id || "", description: "", reportedBy: "", status: "Open" as ProblemStatus });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = data.problems.filter(p => {
     const matchStatus = filterStatus === "All" || p.status === filterStatus;
@@ -49,31 +51,47 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
     setShowModal(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.description.trim() || !form.reportedBy.trim()) return;
-    if (editing) {
-      setData({ ...data, problems: data.problems.map(p => p.id === editing.id ? { ...p, ...form } : p) });
-      addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${editing.computerId}`);
-    } else {
-      const id = generateId("PRB", data.problems);
-      const newP: Problem = { id, ...form, status: "Open", dateReported: todayDate() };
-      setData({ ...data, problems: [newP, ...data.problems] });
-      addLog(role, role === "admin" ? "Admin" : form.reportedBy, "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
+    setIsSubmitting(true);
+    try {
+      if (editing) {
+        const updated = await api.updateProblem(editing.id, form).catch(() => ({ ...editing, ...form }));
+        setData({ ...data, problems: data.problems.map(p => p.id === editing.id ? { ...p, ...updated } : p) });
+        addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${editing.computerId}`);
+      } else {
+        const id = generateId("PRB", data.problems);
+        const newP: Problem = { id, ...form, status: "Open", dateReported: todayDate() };
+        const saved = await api.createProblem(newP).catch(() => newP);
+        setData({ ...data, problems: [saved, ...data.problems] });
+        addLog(role, role === "admin" ? "Admin" : form.reportedBy, "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
+      }
+      setShowModal(false);
+    } finally {
+      setIsSubmitting(false);
     }
-    setShowModal(false);
   }
 
-  function handleDelete(id: string) {
-    setData({ ...data, problems: data.problems.filter(p => p.id !== id) });
-    addLog("admin", "Admin", "Problem Deleted", `Deleted problem ${id}`);
-    setDeleteConfirm(null);
+  async function handleDelete(id: string) {
+    try {
+      await api.deleteProblem(id).catch(() => null);
+      setData({ ...data, problems: data.problems.filter(p => p.id !== id) });
+      addLog("admin", "Admin", "Problem Deleted", `Deleted problem ${id}`);
+    } finally {
+      setDeleteConfirm(null);
+    }
   }
 
-  function advanceStatus(p: Problem) {
+  async function advanceStatus(p: Problem) {
     const next = PROBLEM_STATUS_FLOW[p.status];
     if (!next) return;
-    setData({ ...data, problems: data.problems.map(x => x.id === p.id ? { ...x, status: next } : x) });
-    addLog("admin", "Admin", "Problem Status Updated", `${p.id} status: ${p.status} → ${next}`);
+    try {
+      await api.updateProblem(p.id, { status: next }).catch(() => null);
+      setData({ ...data, problems: data.problems.map(x => x.id === p.id ? { ...x, status: next } : x) });
+      addLog("admin", "Admin", "Problem Status Updated", `${p.id} status: ${p.status} → ${next}`);
+    } catch {
+      // Fallback
+    }
   }
 
   const f = "w-full bg-[#0f172a] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white placeholder-[#475569] focus:border-[#0ea5e9] transition-colors";
@@ -207,10 +225,15 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
               </div>
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={handleSave} className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] transition-colors">
-                {editing ? "Save Changes" : "Add Problem"}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
+              >
+                {isSubmitting ? "Saving to Database..." : editing ? "Save Changes" : "Add Problem"}
               </button>
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
             </div>
           </div>
         </Modal>

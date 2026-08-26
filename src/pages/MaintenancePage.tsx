@@ -4,6 +4,7 @@ import type { AppData, Maintenance, MaintenanceStatus } from "../data";
 import type { UserRole } from "../App";
 import StatusBadge, { getMaintenanceStatusVariant } from "../components/StatusBadge";
 import Modal from "../components/Modal";
+import { api } from "../api";
 
 interface Props {
   data: AppData;
@@ -31,6 +32,7 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Maintenance | null>(null);
   const [form, setForm] = useState<Omit<Maintenance, "id">>({ ...emptyForm(), computerId: data.computers[0]?.id || "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = data.maintenance.filter(m => {
     const matchStatus = filterStatus === "All" || m.status === filterStatus;
@@ -52,37 +54,59 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
     setShowModal(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.activity.trim() || !form.technician.trim()) return;
-    if (editing) {
-      setData({ ...data, maintenance: data.maintenance.map(m => m.id === editing.id ? { ...m, ...form } : m) });
-      addLog("admin", "Admin", "Maintenance Updated", `Updated ${editing.id} on ${editing.computerId}`);
-    } else {
-      const id = generateId("MNT", data.maintenance);
-      setData({ ...data, maintenance: [{ id, ...form }, ...data.maintenance] });
-      addLog("admin", "Admin", "Maintenance Scheduled", `Scheduled ${id} — ${form.maintenanceType} on ${form.computerId} for ${form.scheduledDate}`);
+    setIsSubmitting(true);
+    try {
+      if (editing) {
+        const updated = await api.updateMaintenance(editing.id, form).catch(() => ({ ...editing, ...form }));
+        setData({ ...data, maintenance: data.maintenance.map(m => m.id === editing.id ? { ...m, ...updated } : m) });
+        addLog("admin", "Admin", "Maintenance Updated", `Updated ${editing.id} on ${editing.computerId}`);
+      } else {
+        const id = generateId("MNT", data.maintenance);
+        const newM: Maintenance = { id, ...form };
+        const saved = await api.createMaintenance(newM).catch(() => newM);
+        setData({ ...data, maintenance: [saved, ...data.maintenance] });
+        addLog("admin", "Admin", "Maintenance Scheduled", `Scheduled ${id} — ${form.maintenanceType} on ${form.computerId} for ${form.scheduledDate}`);
+      }
+      setShowModal(false);
+    } finally {
+      setIsSubmitting(false);
     }
-    setShowModal(false);
   }
 
-  function handleDelete(id: string) {
-    setData({ ...data, maintenance: data.maintenance.filter(m => m.id !== id) });
-    addLog("admin", "Admin", "Maintenance Deleted", `Deleted maintenance record ${id}`);
-    setDeleteConfirm(null);
+  async function handleDelete(id: string) {
+    try {
+      await api.deleteMaintenance(id).catch(() => null);
+      setData({ ...data, maintenance: data.maintenance.filter(m => m.id !== id) });
+      addLog("admin", "Admin", "Maintenance Deleted", `Deleted maintenance record ${id}`);
+    } finally {
+      setDeleteConfirm(null);
+    }
   }
 
-  function advanceStatus(m: Maintenance) {
+  async function advanceStatus(m: Maintenance) {
     const next = MAINTENANCE_STATUS_FLOW[m.status];
     if (!next) return;
     const updates: Partial<Maintenance> = { status: next };
     if (next === "Completed") updates.completedDate = todayDate();
-    setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, ...updates } : x) });
-    addLog("admin", "Admin", `Maintenance ${next}`, `${m.id} status: ${m.status} → ${next} on ${m.computerId}`);
+    try {
+      await api.updateMaintenance(m.id, updates).catch(() => null);
+      setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, ...updates } : x) });
+      addLog("admin", "Admin", `Maintenance ${next}`, `${m.id} status: ${m.status} → ${next} on ${m.computerId}`);
+    } catch {
+      // Fallback
+    }
   }
 
-  function cancelMaintenance(m: Maintenance) {
-    setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, status: "Cancelled" } : x) });
-    addLog("admin", "Admin", "Maintenance Cancelled", `Cancelled ${m.id} on ${m.computerId}`);
+  async function cancelMaintenance(m: Maintenance) {
+    try {
+      await api.updateMaintenance(m.id, { status: "Cancelled" }).catch(() => null);
+      setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, status: "Cancelled" } : x) });
+      addLog("admin", "Admin", "Maintenance Cancelled", `Cancelled ${m.id} on ${m.computerId}`);
+    } catch {
+      // Fallback
+    }
   }
 
   const f = "w-full bg-[#0f172a] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white placeholder-[#475569] focus:border-[#0ea5e9] transition-colors";
@@ -244,10 +268,15 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
               <textarea className={`${f} resize-none h-20`} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Any additional notes or instructions…" />
             </div>
             <div className="flex gap-3 pt-1">
-              <button onClick={handleSave} className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] transition-colors">
-                {editing ? "Save Changes" : "Schedule Maintenance"}
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
+              >
+                {isSubmitting ? "Saving to Database..." : editing ? "Save Changes" : "Schedule Maintenance"}
               </button>
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
             </div>
           </div>
         </Modal>

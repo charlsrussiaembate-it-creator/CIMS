@@ -13,20 +13,15 @@ interface ActionTileProps {
   description: string;
   action: string;
   onClick: () => void;
-  highlight?: boolean;
   badge?: string;
   badgeColor?: string;
 }
 
-function ActionTile({ icon, title, description, action, onClick, highlight, badge, badgeColor }: ActionTileProps) {
+function ActionTile({ icon, title, description, action, onClick, badge, badgeColor }: ActionTileProps) {
   return (
     <button
       onClick={onClick}
-      className={`text-left p-6 rounded-xl border transition-all group hover:scale-[1.01] active:scale-[0.99] ${
-        highlight
-          ? "bg-[#0ea5e9] border-[#0ea5e9] text-[#0f172a] shadow-lg shadow-sky-500/20"
-          : "bg-[#1e293b] border-[#334155] hover:border-[#475569]"
-      }`}
+      className="text-left p-6 rounded-xl border bg-[#1e293b] border-[#334155] transition-all group hover:scale-[1.01] hover:border-[#475569] active:scale-[0.99]"
     >
       <div className="flex items-start justify-between mb-4">
         <span className="text-3xl">{icon}</span>
@@ -36,9 +31,9 @@ function ActionTile({ icon, title, description, action, onClick, highlight, badg
           </span>
         )}
       </div>
-      <div className={`text-base font-semibold mb-1 ${highlight ? "text-[#0f172a]" : "text-white"}`}>{title}</div>
-      <div className={`text-sm mb-4 ${highlight ? "text-[#0c3a55]" : "text-[#64748b]"}`}>{description}</div>
-      <div className={`text-xs font-semibold flex items-center gap-1 transition-gap group-hover:gap-2 ${highlight ? "text-[#0c3a55]" : "text-[#0ea5e9]"}`}>
+      <div className="text-base font-semibold mb-1 text-white">{title}</div>
+      <div className="text-sm mb-4 text-[#64748b]">{description}</div>
+      <div className="text-xs font-semibold flex items-center gap-1 transition-gap group-hover:gap-2 text-[#0ea5e9]">
         {action} <span>→</span>
       </div>
     </button>
@@ -87,7 +82,6 @@ export default function StaffDashboard({ data, setPage }: Props) {
           description="Found an issue with a computer? Submit a report and the admin team will address it."
           action="Start report"
           onClick={() => setPage("report")}
-          highlight
           badge="ACTION"
           badgeColor="bg-[#0c3a55] text-[#38bdf8]"
         />

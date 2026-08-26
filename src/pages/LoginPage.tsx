@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { api } from "../api";
 
 interface LoginPageProps {
   onLogin: (role: "admin" | "staff") => void;
@@ -11,107 +12,323 @@ const demoAccounts = {
 };
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
-  const [email, setEmail] = useState(() => localStorage.getItem("cims-remembered-email") ?? "");
+  const [email, setEmail] = useState(
+    () => localStorage.getItem("cims-remembered-email") ?? "",
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("cims-remembered-email")));
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() =>
+    Boolean(localStorage.getItem("cims-remembered-email")),
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [notice, setNotice] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice("");
+    setError("");
 
     if (!email.trim() || !password.trim()) {
       setError("Enter your email and password to continue.");
       return;
     }
 
-    const account = demoAccounts[email.trim().toLowerCase() as keyof typeof demoAccounts];
+    setIsLoading(true);
 
-    if (!account || account.password !== password) {
-      setError("Use one of the demo accounts shown below.");
-      return;
+    try {
+      // Authenticate against backend database
+      const response = await api.login(email.trim(), password);
+
+      if (rememberMe) {
+        localStorage.setItem("cims-remembered-email", email.trim());
+      } else {
+        localStorage.removeItem("cims-remembered-email");
+      }
+
+      onLogin(response.user.role);
+    } catch (err: any) {
+      // Check demo accounts as graceful fallback
+      const account =
+        demoAccounts[email.trim().toLowerCase() as keyof typeof demoAccounts];
+      if (account && account.password === password) {
+        if (rememberMe) {
+          localStorage.setItem("cims-remembered-email", email.trim());
+        } else {
+          localStorage.removeItem("cims-remembered-email");
+        }
+        onLogin(account.role);
+        return;
+      }
+
+      setError(err?.message || "Invalid credentials or unable to reach database.");
+    } finally {
+      setIsLoading(false);
     }
-
-    if (rememberMe) localStorage.setItem("cims-remembered-email", email.trim());
-    else localStorage.removeItem("cims-remembered-email");
-
-    onLogin(account.role);
   }
 
   function handleForgotPassword() {
     setError("");
-    setNotice(email.trim() ? "Demo mode: use the password shown below to sign in." : "Enter your email to request a password reset.");
+    setNotice(
+      email.trim()
+        ? "Demo mode: use the password shown below to sign in."
+        : "Enter your email to request a password reset.",
+    );
   }
 
   return (
-    <main className="min-h-full bg-[#0b1120] text-white lg:grid lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="relative hidden overflow-hidden border-r border-white/10 bg-[#10233b] lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[36px] border-[#0ea5e9]/15" />
-        <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full border-[48px] border-[#f59e0b]/10" />
-        <div className="relative">
-          <div className="mb-16 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0ea5e9] text-lg font-bold text-[#07111e]">C</div>
-            <span className="text-sm font-semibold tracking-[0.18em] text-white/90">CIMS</span>
-          </div>
-          <p className="mb-4 font-mono text-xs uppercase tracking-[0.22em] text-[#38bdf8]">Laboratory operations</p>
-          <h1 className="max-w-lg text-5xl font-semibold leading-[1.05] tracking-tight text-white xl:text-6xl">
-            Keep every computer ready.
-          </h1>
-          <p className="mt-6 max-w-md text-base leading-7 text-[#9db0c6]">
-            A clear view of inventory, reported problems, and maintenance work for your computer laboratories.
-          </p>
+    <main className="min-h-screen overflow-hidden bg-[#f5f5f7] text-[#1d1d1f] lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      {/* =====================================================
+          LEFT — MOTION GRAPHIC
+      ===================================================== */}
+
+      <section className="relative hidden min-h-screen overflow-hidden bg-[#f5f5f7] lg:flex lg:flex-col lg:justify-between">
+        {/* Soft ambient background */}
+        <div className="absolute inset-0">
+          <div
+            className="motion-float absolute -left-48 -top-48 h-[600px] w-[600px] rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(0,122,255,0.10), transparent 68%)",
+            }}
+          />
+
+          <div
+            className="motion-float-reverse absolute -bottom-56 -right-48 h-[650px] w-[650px] rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(14,165,233,0.08), transparent 68%)",
+            }}
+          />
         </div>
-        <div className="relative flex items-center gap-3 text-xs text-[#7890aa]">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.12)]" />
-          System ready
+
+        {/* Branding */}
+        <div className="relative z-10 p-12">
+          <div className="logo-appear flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1d1d1f] text-sm font-semibold text-white shadow-lg">
+              C
+            </div>
+
+            <span className="text-sm font-semibold tracking-[0.18em] text-[#1d1d1f]">
+              CIMS
+            </span>
+          </div>
+        </div>
+
+        {/* =================================================
+            FLOATING BOX 3D MOTION GRAPHIC
+        ================================================= */}
+
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="floating-scene relative h-[440px] w-[440px] flex items-center justify-center">
+            {/* Ambient Shadow Plane */}
+            <div className="floating-shadow" />
+
+            {/* Orbiting dashed track */}
+            <div className="floating-orbit-track" />
+
+            {/* Main Hero Floating Box */}
+            <div className="floating-box-main">
+              <div className="floating-box-inner">
+                <div className="floating-box-glass">
+                  <div className="floating-box-logo">
+                    <span>C</span>
+                  </div>
+                  <div className="floating-box-shine" />
+                </div>
+              </div>
+            </div>
+
+            {/* Satellite Floating Box 1 (Top Right) */}
+            <div className="floating-satellite-1">
+              <div className="floating-mini-box bg-white/90 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-black/[0.04] p-3 rounded-2xl flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-[#0071e3]/10 flex items-center justify-center text-[#0071e3] text-xs font-bold">
+                  🖥
+                </div>
+                <div className="text-left pr-1">
+                  <div className="text-[11px] font-semibold text-[#1d1d1f]">Inventory</div>
+                  <div className="text-[9px] text-[#86868b]">All Systems Ready</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Satellite Floating Box 2 (Bottom Left) */}
+            <div className="floating-satellite-2">
+              <div className="floating-mini-box bg-white/90 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-black/[0.04] p-3 rounded-2xl flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-xs font-bold">
+                  ✓
+                </div>
+                <div className="text-left pr-1">
+                  <div className="text-[11px] font-semibold text-[#1d1d1f]">Status</div>
+                  <div className="text-[9px] text-[#86868b]">Active · Verified</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Satellite Floating Box 3 (Top Left depth) */}
+            <div className="floating-satellite-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/70 backdrop-blur-md shadow-md border border-black/[0.04] flex items-center justify-center text-sm">
+                ⚡
+              </div>
+            </div>
+
+            {/* Satellite Floating Box 4 (Bottom Right depth) */}
+            <div className="floating-satellite-4">
+              <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 backdrop-blur-md border border-[#0071e3]/20 flex items-center justify-center text-xs text-[#0071e3]">
+                🔧
+              </div>
+            </div>
+
+            {/* Kinetic Floating Accent Dots */}
+            <span className="floating-particle particle-1" />
+            <span className="floating-particle particle-2" />
+            <span className="floating-particle particle-3" />
+            <span className="floating-particle particle-4" />
+          </div>
+        </div>
+
+        {/* Bottom description */}
+        <div className="relative z-10 p-12">
+          <div className="content-appear max-w-md">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-[#86868b]">
+              Computer Inventory & Maintenance
+            </p>
+
+            <h1 className="text-4xl font-semibold leading-[1.08] tracking-[-0.035em] text-[#1d1d1f] xl:text-5xl">
+              Keep every computer ready.
+            </h1>
+
+            <p className="mt-5 max-w-sm text-[15px] leading-7 text-[#6e6e73]">
+              A simple way to monitor inventory, reported problems, and
+              maintenance across your computer laboratories.
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-6 py-12 sm:px-10">
-        <div className="w-full max-w-md">
-          <div className="mb-10 lg:hidden">
-            <div className="mb-8 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0ea5e9] text-lg font-bold text-[#07111e]">C</div>
-              <span className="text-sm font-semibold tracking-[0.18em] text-white/90">CIMS</span>
+      {/* =====================================================
+          RIGHT — LOGIN
+      ===================================================== */}
+
+      <section className="flex min-h-screen items-center justify-center px-6 py-12 sm:px-10 lg:bg-white">
+        <div className="content-appear w-full max-w-[390px]">
+          {/* Mobile logo */}
+          <div className="mb-12 lg:hidden">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1d1d1f] text-sm font-semibold text-white">
+                C
+              </div>
+
+              <span className="text-sm font-semibold tracking-[0.18em] text-[#1d1d1f]">
+                CIMS
+              </span>
             </div>
           </div>
 
-          <div className="mb-8">
-            <p className="mb-3 font-mono text-xs uppercase tracking-[0.2em] text-[#38bdf8]">Secure access</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-white">Welcome back</h2>
-            <p className="mt-2 text-sm text-[#8193aa]">Sign in to manage your laboratory workspace.</p>
+          {/* Heading */}
+          <div className="mb-9">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-[#86868b]">
+              Secure access
+            </p>
+
+            <h2 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f]">
+              Welcome back.
+            </h2>
+
+            <p className="mt-2 text-[15px] leading-6 text-[#6e6e73]">
+              Sign in to manage your laboratory workspace.
+            </p>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
             <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#9db0c6]">Email address</span>
+              <span className="mb-2 block text-[13px] font-medium text-[#6e6e73]">
+                Email address
+              </span>
+
               <input
                 type="email"
                 value={email}
-                onChange={event => { setEmail(event.target.value); setError(""); }}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setError("");
+                }}
                 placeholder="you@school.edu"
                 autoComplete="email"
-                className="w-full rounded-lg border border-[#30445d] bg-[#111c2d] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-[#52657d] focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20"
+                className="
+                  w-full
+                  rounded-[12px]
+                  border
+                  border-[#d2d2d7]
+                  bg-[#f5f5f7]
+                  px-4
+                  py-3.5
+                  text-[15px]
+                  text-[#1d1d1f]
+                  outline-none
+                  transition-all
+                  placeholder:text-[#86868b]
+                  focus:border-[#0071e3]
+                  focus:bg-white
+                  focus:ring-4
+                  focus:ring-[#0071e3]/10
+                "
               />
             </label>
 
+            {/* Password */}
             <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#9db0c6]">Password</span>
+              <span className="mb-2 block text-[13px] font-medium text-[#6e6e73]">
+                Password
+              </span>
+
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={event => { setPassword(event.target.value); setError(""); setNotice(""); }}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError("");
+                    setNotice("");
+                  }}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  className="w-full rounded-lg border border-[#30445d] bg-[#111c2d] px-4 py-3 pr-20 text-sm text-white outline-none transition-colors placeholder:text-[#52657d] focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#0ea5e9]/20"
+                  className="
+                    w-full
+                    rounded-[12px]
+                    border
+                    border-[#d2d2d7]
+                    bg-[#f5f5f7]
+                    px-4
+                    py-3.5
+                    pr-20
+                    text-[15px]
+                    text-[#1d1d1f]
+                    outline-none
+                    transition-all
+                    placeholder:text-[#86868b]
+                    focus:border-[#0071e3]
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-[#0071e3]/10
+                  "
                 />
+
                 <button
                   type="button"
-                  onClick={() => setShowPassword(value => !value)}
-                  className="absolute inset-y-0 right-3 text-xs font-medium text-[#8193aa] hover:text-white"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="
+                    absolute
+                    inset-y-0
+                    right-4
+                    text-[13px]
+                    font-medium
+                    text-[#0071e3]
+                    transition-opacity
+                    hover:opacity-70
+                  "
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? "Hide" : "Show"}
@@ -119,33 +336,114 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               </div>
             </label>
 
+            {/* Remember + Forgot */}
             <div className="flex items-center justify-between gap-4">
-              <label className="flex items-center gap-2 text-xs text-[#8193aa]">
+              <label className="flex items-center gap-2 text-[13px] text-[#6e6e73]">
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={event => setRememberMe(event.target.checked)}
-                  className="h-4 w-4 accent-[#0ea5e9]"
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  className="h-4 w-4 accent-[#0071e3]"
                 />
                 Remember me
               </label>
-              <button type="button" onClick={handleForgotPassword} className="text-xs font-medium text-[#38bdf8] hover:text-white">
+
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-[13px] font-medium text-[#0071e3] transition-opacity hover:opacity-70"
+              >
                 Forgot password?
               </button>
             </div>
 
-            {error && <p className="text-sm text-rose-400" role="alert">{error}</p>}
-            {notice && <p className="text-sm text-[#7dd3fc]" role="status">{notice}</p>}
+            {/* Error */}
+            {error && (
+              <p
+                className="rounded-xl bg-red-500/[0.07] px-4 py-3 text-[13px] text-red-600"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
 
-            <button type="submit" className="w-full rounded-lg bg-[#0ea5e9] px-4 py-3 text-sm font-semibold text-[#07111e] transition-colors hover:bg-[#38bdf8] focus:outline-none focus:ring-2 focus:ring-[#38bdf8] focus:ring-offset-2 focus:ring-offset-[#0b1120]">
-              Sign in
+            {/* Notice */}
+            {notice && (
+              <p
+                className="rounded-xl bg-blue-500/[0.07] px-4 py-3 text-[13px] text-[#0071e3]"
+                role="status"
+              >
+                {notice}
+              </p>
+            )}
+
+            {/* Sign in */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="
+                w-full
+                rounded-[12px]
+                bg-[#0071e3]
+                px-4
+                py-3.5
+                text-[15px]
+                font-medium
+                text-white
+                shadow-[0_6px_18px_rgba(0,113,227,0.18)]
+                transition-all
+                duration-200
+                hover:bg-[#0077ed]
+                hover:shadow-[0_8px_24px_rgba(0,113,227,0.23)]
+                active:scale-[0.99]
+                disabled:opacity-60
+                disabled:cursor-not-allowed
+                focus:outline-none
+                focus:ring-4
+                focus:ring-[#0071e3]/20
+                flex
+                items-center
+                justify-center
+                gap-2
+              "
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span>Connecting to Database...</span>
+                </>
+              ) : (
+                "Sign in"
+              )}
             </button>
           </form>
 
-          <p className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-[#647891]">
-            Demo admin: <span className="font-mono text-[#91a6bd]">admin@demo.com / admin123</span>
-            <br />
-            Demo staff: <span className="font-mono text-[#91a6bd]">staff@demo.com / staff123</span>
+          {/* Demo accounts */}
+          <div className="mt-8 border-t border-[#d2d2d7]/70 pt-5">
+            <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b]">
+              Demo accounts
+            </p>
+
+            <p className="text-center text-[12px] text-[#86868b]">
+              Admin:{" "}
+              <span className="font-mono text-[#6e6e73]">
+                admin@demo.com / admin123
+              </span>
+            </p>
+
+            <p className="mt-1 text-center text-[12px] text-[#86868b]">
+              Staff:{" "}
+              <span className="font-mono text-[#6e6e73]">
+                staff@demo.com / staff123
+              </span>
+            </p>
+          </div>
+
+          <p className="mt-8 text-center text-[11px] text-[#aeaeb2]">
+            Computer Inventory & Maintenance System
           </p>
         </div>
       </section>

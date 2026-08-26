@@ -1,0 +1,131 @@
+/* =====================================================
+   ISOMETRIC FLIPPING CUBE LOADER (LOADER-6)
+===================================================== */
+
+:root {
+  --loader-bg: #f5f5f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --loader-bg: #0b1425;
+  }
+}
+
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--loader-bg);
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loader-overlay.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-6 {
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+  position: relative;
+  transform: rotate(45deg);
+  scale: 1.2;
+}
+
+.loader-6::before {
+  content: "";
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  left: 0;
+  top: -24px;
+  animation: animloader 4s ease infinite;
+}
+
+.loader-6::after {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  background: #0071e3;
+  box-shadow: 0 0 14px rgba(0, 113, 227, 0.4);
+  animation: animloader2 2s ease infinite;
+}
+
+@keyframes animloader {
+  0% {
+    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
+      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+  }
+  12% {
+    box-shadow: 0 24px #1d1d1f, 24px 24px rgba(0, 113, 227, 0),
+      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+  }
+  25% {
+    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f,
+      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+  }
+  37% {
+    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f, 24px 48px #1d1d1f,
+      0px 48px rgba(0, 113, 227, 0);
+  }
+  50% {
+    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f, 24px 48px #1d1d1f,
+      0px 48px #1d1d1f;
+  }
+  62% {
+    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px #1d1d1f,
+      24px 48px #1d1d1f, 0px 48px #1d1d1f;
+  }
+  75% {
+    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
+      24px 48px #1d1d1f, 0px 48px #1d1d1f;
+  }
+  87% {
+    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
+      24px 48px rgba(0, 113, 227, 0), 0px 48px #1d1d1f;
+  }
+  100% {
+    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
+      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+  }
+}
+
+@keyframes animloader2 {
+  0% {
+    transform: translate(0, 0) rotateX(0) rotateY(0);
+  }
+  25% {
+    transform: translate(100%, 0) rotateX(0) rotateY(180deg);
+  }
+  50% {
+    transform: translate(100%, 100%) rotateX(-180deg) rotateY(180deg);
+  }
+  75% {
+    transform: translate(0, 100%) rotateX(-180deg) rotateY(360deg);
+  }
+  100% {
+    transform: translate(0, 0) rotateX(0) rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-6,
+  .loader-6::before,
+  .loader-6::after {
+    animation: none !important;
+  }
+}

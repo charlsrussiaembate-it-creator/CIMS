@@ -36,7 +36,14 @@ const staffPerms = [
   { label: "Edit/delete records", ok: false },
 ];
 
-export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staffPage, setStaffPage }: SidebarProps) {
+export default function Sidebar({
+  role,
+  onLogout,
+  adminPage,
+  setAdminPage,
+  staffPage,
+  setStaffPage,
+}: SidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const currentPage = role === "admin" ? adminPage : staffPage;
   const nav = role === "admin" ? adminNav : staffNav;
@@ -80,9 +87,6 @@ export default function Sidebar({ role, onLogout, adminPage, setAdminPage, staff
           >
             <span className="text-base leading-none w-5 text-center">{item.icon}</span>
             <span>{item.label}</span>
-            {item.id === "report" && (
-              <span className="ml-auto text-[9px] bg-[#0ea5e9] text-[#0f172a] px-1.5 py-0.5 rounded font-bold">NEW</span>
-            )}
           </button>
         ))}
       </nav>
