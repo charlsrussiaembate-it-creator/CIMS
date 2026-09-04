@@ -28,13 +28,6 @@ const staffNav: { id: StaffPage; label: string; icon: string }[] = [
   { id: "maintenance-status", label: "Maintenance Status", icon: "🔧" },
 ];
 
-const adminPerms = ["Manage computers", "Log maintenance", "Manage problems", "View audit log"];
-const staffPerms = [
-  { label: "View computer status", ok: true },
-  { label: "Report problems", ok: true },
-  { label: "View maintenance status", ok: true },
-  { label: "Edit/delete records", ok: false },
-];
 
 export default function Sidebar({
   role,
@@ -58,7 +51,7 @@ export default function Sidebar({
   }
 
   return (
-    <aside className="w-60 flex-shrink-0 flex flex-col bg-[#0b1425] border-r border-[#1e293b] h-full">
+    <aside className="w-60 flex-shrink-0 flex flex-col bg-[#0b1425] border-r border-[#1e293b] h-full sticky top-0">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-[#1e293b]">
         <div className="flex items-center gap-3">
@@ -91,39 +84,19 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* Permissions */}
+      {/* Footer */}
       <div className="px-4 py-4 border-t border-[#1e293b]">
-        <div className="text-[10px] uppercase tracking-widest text-[#334155] mb-2 px-1">Permissions</div>
-        {role === "admin" ? (
-          <ul className="space-y-1">
-            {adminPerms.map(p => (
-              <li key={p} className="flex items-center gap-2 text-[10px] text-[#475569]">
-                <span className="text-emerald-500">✓</span>{p}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <ul className="space-y-1">
-            {staffPerms.map(p => (
-              <li key={p.label} className="flex items-center gap-2 text-[10px]">
-                <span className={p.ok ? "text-emerald-500" : "text-[#334155]"}>{p.ok ? "✓" : "✗"}</span>
-                <span className={p.ok ? "text-[#475569]" : "text-[#334155]"}>{p.label}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="text-[10px] text-[#334155] mt-3">CIMS v1.0 · St. Rita's College</div>
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-4 w-full rounded-md border border-[#334155] px-3 py-2 text-left text-xs font-medium text-[#94a3b8] transition-colors hover:border-[#64748b] hover:bg-[#1e293b] hover:text-white"
+          className="w-full rounded-md border border-[#334155] px-3 py-2 text-left text-xs font-medium text-[#94a3b8] transition-colors hover:border-[#64748b] hover:bg-[#1e293b] hover:text-white"
         >
-          Log out
+          Sign Out
         </button>
       </div>
       {showLogoutConfirm && (
-        <Modal title="Confirm Logout" onClose={() => setShowLogoutConfirm(false)}>
-          <p className="text-sm text-[#94a3b8]">Are you sure you want to log out?</p>
+        <Modal title="Sign Out Confirmation" onClose={() => setShowLogoutConfirm(false)}>
+          <p className="text-sm text-[#94a3b8]">Are you sure you want to sign out of your account?</p>
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
@@ -137,7 +110,7 @@ export default function Sidebar({
               onClick={onLogout}
               className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-400 transition-colors"
             >
-              Log out
+              Sign Out
             </button>
           </div>
         </Modal>

@@ -184,18 +184,16 @@ textarea:focus {
 
 /* Auth View Crossfade */
 .auth-view-enter {
-  animation: authCrossfade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform;
+  animation: authCrossfade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity;
 }
 
 @keyframes authCrossfade {
   from {
     opacity: 0;
-    transform: scale(0.99);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 

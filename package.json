@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend": "php -S 127.0.0.1:8000 -t ../Backend/Api",
+    "db": "php ../Backend/database/dev_tool.php menu",
+    "db:status": "php ../Backend/database/dev_tool.php status",
+    "db:migrate": "php ../Backend/database/dev_tool.php migrate",
+    "db:seed": "php ../Backend/database/dev_tool.php seed",
+    "db:reset": "php ../Backend/database/dev_tool.php reset"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -29,6 +29,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Problem | null>(null);
   const [form, setForm] = useState({ computerId: data.computers[0]?.id || "", description: "", reportedBy: "", status: "Open" as ProblemStatus });
+  const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = data.problems.filter(p => {
@@ -41,32 +42,79 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
 
   function openAdd() {
     setEditing(null);
-    setForm({ computerId: data.computers[0]?.id || "", description: "", reportedBy: "", status: "Open" });
+    setForm({ computerId: data.computers[0]?.id || "", description: "", reportedBy: role === "admin" ? "Admin" : "", status: "Open" });
+    setFormError("");
     setShowModal(true);
   }
 
   function openEdit(p: Problem) {
     setEditing(p);
     setForm({ computerId: p.computerId, description: p.description, reportedBy: p.reportedBy, status: p.status });
+    setFormError("");
     setShowModal(true);
   }
 
+  async function syncComputerStatus(computerId: string, newProblemsList: Problem[], currentComputers: typeof data.computers) {
+    const comp = currentComputers.find(c => c.id === computerId);
+    if (!comp || comp.status === "Decommissioned") return currentComputers;
+
+    const hasActiveProblems = newProblemsList.some(
+      p => p.computerId === computerId && (p.status === "Open" || p.status === "In Progress")
+    );
+    const hasActiveMaintenance = data.maintenance.some(
+      m => m.computerId === computerId && (m.status === "Scheduled" || m.status === "In Progress")
+    );
+
+    let newStatus: typeof comp.status | null = null;
+    if (!hasActiveProblems && !hasActiveMaintenance && (comp.status === "Needs Maintenance" || comp.status === "Under Repair")) {
+      newStatus = "Active";
+    } else if (hasActiveProblems && comp.status === "Active") {
+      newStatus = "Needs Maintenance";
+    }
+
+    if (newStatus && newStatus !== comp.status) {
+      await api.updateComputer(computerId, { status: newStatus }).catch(() => null);
+      addLog("admin", "Admin", "Computer Status Updated", `${computerId} status set to ${newStatus}`);
+      return currentComputers.map(c => c.id === computerId ? { ...c, status: newStatus! } : c);
+    }
+    return currentComputers;
+  }
+
   async function handleSave() {
-    if (!form.description.trim() || !form.reportedBy.trim()) return;
+    setFormError("");
+    if (!form.computerId) {
+      setFormError("Please select a computer.");
+      return;
+    }
+    if (!form.description.trim()) {
+      setFormError("Description is required.");
+      return;
+    }
+    if (!form.reportedBy.trim()) {
+      setFormError("Reporter name is required.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (editing) {
         const updated = await api.updateProblem(editing.id, form).catch(() => ({ ...editing, ...form }));
-        setData({ ...data, problems: data.problems.map(p => p.id === editing.id ? { ...p, ...updated } : p) });
-        addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${editing.computerId}`);
+        const updatedProblems = data.problems.map(p => p.id === editing.id ? { ...p, ...updated } : p);
+        const updatedComputers = await syncComputerStatus(form.computerId, updatedProblems, data.computers);
+        setData({ ...data, problems: updatedProblems, computers: updatedComputers });
+        addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${editing.computerId} (Status: ${form.status})`);
       } else {
         const id = generateId("PRB", data.problems);
         const newP: Problem = { id, ...form, status: "Open", dateReported: todayDate() };
         const saved = await api.createProblem(newP).catch(() => newP);
-        setData({ ...data, problems: [saved, ...data.problems] });
+        const updatedProblems = [saved, ...data.problems];
+        const updatedComputers = await syncComputerStatus(form.computerId, updatedProblems, data.computers);
+        setData({ ...data, problems: updatedProblems, computers: updatedComputers });
         addLog(role, role === "admin" ? "Admin" : form.reportedBy, "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
       }
       setShowModal(false);
+    } catch (err: any) {
+      setFormError(err.message || "Failed to save problem.");
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +123,12 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   async function handleDelete(id: string) {
     try {
       await api.deleteProblem(id).catch(() => null);
-      setData({ ...data, problems: data.problems.filter(p => p.id !== id) });
+      const targetProblem = data.problems.find(p => p.id === id);
+      const remainingProblems = data.problems.filter(p => p.id !== id);
+      const updatedComputers = targetProblem
+        ? await syncComputerStatus(targetProblem.computerId, remainingProblems, data.computers)
+        : data.computers;
+      setData({ ...data, problems: remainingProblems, computers: updatedComputers });
       addLog("admin", "Admin", "Problem Deleted", `Deleted problem ${id}`);
     } finally {
       setDeleteConfirm(null);
@@ -87,7 +140,9 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
     if (!next) return;
     try {
       await api.updateProblem(p.id, { status: next }).catch(() => null);
-      setData({ ...data, problems: data.problems.map(x => x.id === p.id ? { ...x, status: next } : x) });
+      const updatedProblems = data.problems.map(x => x.id === p.id ? { ...x, status: next } : x);
+      const updatedComputers = await syncComputerStatus(p.computerId, updatedProblems, data.computers);
+      setData({ ...data, problems: updatedProblems, computers: updatedComputers });
       addLog("admin", "Admin", "Problem Status Updated", `${p.id} status: ${p.status} → ${next}`);
     } catch {
       // Fallback
@@ -202,11 +257,20 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       {showModal && role === "admin" && (
         <Modal title={editing ? `Edit ${editing.id}` : "Add Problem Record"} onClose={() => setShowModal(false)}>
           <div className="space-y-4">
+            {formError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
+                {formError}
+              </div>
+            )}
             <div>
-              <label className={lbl}>Computer</label>
-              <select className={f} value={form.computerId} onChange={e => setForm({ ...form, computerId: e.target.value })}>
-                {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} — {c.location}</option>)}
-              </select>
+              <label className={lbl}>Computer *</label>
+              {data.computers.length === 0 ? (
+                <div className="text-xs text-red-400 p-2 bg-red-500/10 rounded">No computers registered yet. Please add a computer first.</div>
+              ) : (
+                <select className={f} value={form.computerId} onChange={e => setForm({ ...form, computerId: e.target.value })}>
+                  {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} — {c.location}</option>)}
+                </select>
+              )}
             </div>
             <div>
               <label className={lbl}>Description</label>

@@ -9,7 +9,9 @@ export default function AuditLogPage({ data }: Props) {
   const [filterRole, setFilterRole] = useState("All");
   const [search, setSearch] = useState("");
 
-  const filtered = data.auditLogs.filter(log => {
+  const sorted = [...data.auditLogs].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  const filtered = sorted.filter(log => {
     const matchRole = filterRole === "All" || log.role === filterRole;
     const matchSearch = !search || log.action.toLowerCase().includes(search.toLowerCase()) || log.details.toLowerCase().includes(search.toLowerCase()) || log.actor.toLowerCase().includes(search.toLowerCase());
     return matchRole && matchSearch;

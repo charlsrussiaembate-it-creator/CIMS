@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { generateId, todayDate } from "../data";
 import type { AppData, Computer, ComputerStatus } from "../data";
 import type { UserRole } from "../App";
@@ -42,7 +42,9 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
   const [filterStatus, setFilterStatus] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Computer | null>(null);
+  const [idInput, setIdInput] = useState("");
   const [form, setForm] = useState(emptyForm());
+  const [formError, setFormError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,32 +58,49 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
 
   function openAdd() {
     setEditing(null);
+    setIdInput("");
     setForm(emptyForm());
+    setFormError("");
     setShowModal(true);
   }
 
   function openEdit(c: Computer) {
     setEditing(c);
+    setIdInput(c.id);
     setForm({ name: c.name, location: c.location, cpu: c.cpu, ram: c.ram, storage: c.storage, gpu: c.gpu, os: c.os, status: c.status, dateAcquired: c.dateAcquired });
+    setFormError("");
     setShowModal(true);
   }
 
   async function handleSave() {
-    if (!form.name.trim() || !form.location.trim()) return;
+    setFormError("");
+    if (!form.location.trim()) {
+      setFormError("Location is required.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (editing) {
-        const updated = await api.updateComputer(editing.id, form).catch(() => ({ ...editing, ...form }));
+        const finalName = form.name.trim() || editing.id;
+        const updatedPayload = { ...form, name: finalName };
+        const updated = await api.updateComputer(editing.id, updatedPayload).catch(() => ({ ...editing, ...updatedPayload }));
         setData({ ...data, computers: data.computers.map(c => c.id === editing.id ? { ...c, ...updated } : c) });
-        addLog("admin", "Admin", "Computer Updated", `Updated ${editing.id} — ${form.location}`);
+        addLog("admin", "Admin", "Computer Updated", `Updated ${editing.id} (Status: ${form.status}) — ${form.location}`);
       } else {
-        const id = form.name.trim() || generateId("PC", data.computers);
-        const newComputer: Computer = { id, ...form, name: form.name.trim() };
+        const targetId = (idInput.trim() || form.name.trim() || generateId("PC", data.computers)).trim();
+        if (data.computers.some(c => c.id.toLowerCase() === targetId.toLowerCase())) {
+          setFormError(`A computer with ID "${targetId}" already exists. Please choose a unique ID.`);
+          setIsSubmitting(false);
+          return;
+        }
+        const newComputer: Computer = { id: targetId, ...form, name: form.name.trim() || targetId };
         const saved = await api.createComputer(newComputer).catch(() => newComputer);
         setData({ ...data, computers: [...data.computers, saved] });
-        addLog("admin", "Admin", "Computer Added", `Added ${id} at ${form.location}`);
+        addLog("admin", "Admin", "Computer Added", `Added ${targetId} at ${form.location}`);
       }
       setShowModal(false);
+    } catch (err: any) {
+      setFormError(err.message || "Failed to save computer to database.");
     } finally {
       setIsSubmitting(false);
     }
@@ -90,8 +109,13 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
   async function handleDelete(id: string) {
     try {
       await api.deleteComputer(id).catch(() => null);
-      setData({ ...data, computers: data.computers.filter(c => c.id !== id) });
-      addLog("admin", "Admin", "Computer Deleted", `Deleted computer ${id}`);
+      setData({
+        ...data,
+        computers: data.computers.filter(c => c.id !== id),
+        problems: data.problems.filter(p => p.computerId !== id),
+        maintenance: data.maintenance.filter(m => m.computerId !== id),
+      });
+      addLog("admin", "Admin", "Computer Deleted", `Deleted computer ${id} and associated records`);
     } finally {
       setDeleteConfirm(null);
     }
@@ -145,9 +169,8 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
           </thead>
           <tbody className="divide-y divide-[#1e293b]">
             {filtered.map(c => (
-              <>
+              <React.Fragment key={c.id}>
                 <tr
-                  key={c.id}
                   className="hover:bg-[#0f172a] transition-colors group cursor-pointer"
                   onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
                 >
@@ -202,7 +225,7 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={9} className="text-center py-10 text-[#475569] text-sm">No computers found</td></tr>
@@ -215,15 +238,35 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
       {showModal && (
         <Modal title={editing ? `Edit ${editing.id}` : "Add Computer"} onClose={() => setShowModal(false)}>
           <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {formError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
+                {formError}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={lbl}>Computer ID / Name *</label>
-                <input className={f} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="PC-LAB-A-09" />
+                <label className={lbl}>{editing ? "Computer ID (Read-only)" : "Computer ID (Auto if blank)"}</label>
+                <input
+                  className={`${f} font-mono ${editing ? "opacity-60 cursor-not-allowed" : ""}`}
+                  value={editing ? editing.id : idInput}
+                  disabled={Boolean(editing)}
+                  onChange={e => setIdInput(e.target.value)}
+                  placeholder="e.g. PC-LAB-A-09"
+                />
               </div>
               <div>
-                <label className={lbl}>Location *</label>
-                <input className={f} value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="Lab A — Row 1, Seat 1" />
+                <label className={lbl}>Computer Name / Label</label>
+                <input
+                  className={f}
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. PC-LAB-A-09 or Workstation 1"
+                />
               </div>
+            </div>
+            <div>
+              <label className={lbl}>Location *</label>
+              <input className={f} value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g. Lab A — Row 1, Seat 1" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -286,7 +329,9 @@ export default function ComputersPage({ data, setData, addLog }: Props) {
 
       {deleteConfirm && (
         <Modal title="Delete Computer" onClose={() => setDeleteConfirm(null)}>
-          <p className="text-sm text-[#94a3b8] mb-5">Delete <span className="font-mono text-white">{deleteConfirm}</span>? All associated problems and maintenance records will remain but be orphaned.</p>
+          <p className="text-sm text-[#94a3b8] mb-5">
+            Delete <span className="font-mono text-white">{deleteConfirm}</span>? All associated problems and maintenance records will also be permanently removed.
+          </p>
           <div className="flex gap-3">
             <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-400 transition-colors">Delete</button>
             <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>

@@ -7,11 +7,15 @@ interface Props {
 }
 
 export default function HistoryPage({ data }: Props) {
-  const [selectedId, setSelectedId] = useState(data.computers[0]?.id || "");
+  const [selectedId, setSelectedId] = useState("");
 
-  const computer = data.computers.find(c => c.id === selectedId);
-  const computerProblems = data.problems.filter(p => p.computerId === selectedId).sort((a, b) => b.dateReported.localeCompare(a.dateReported));
-  const computerMaintenance = data.maintenance.filter(m => m.computerId === selectedId).sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
+  const activeId = (selectedId && data.computers.some(c => c.id === selectedId))
+    ? selectedId
+    : (data.computers[0]?.id || "");
+
+  const computer = data.computers.find(c => c.id === activeId);
+  const computerProblems = data.problems.filter(p => p.computerId === activeId).sort((a, b) => b.dateReported.localeCompare(a.dateReported));
+  const computerMaintenance = data.maintenance.filter(m => m.computerId === activeId).sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
 
   type TimelineEntry =
     | { type: "maintenance"; date: string; m: typeof computerMaintenance[0] }
@@ -38,7 +42,7 @@ export default function HistoryPage({ data }: Props) {
               key={c.id}
               onClick={() => setSelectedId(c.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
-                selectedId === c.id
+                activeId === c.id
                   ? "bg-[#0ea5e9] text-[#0f172a]"
                   : "bg-[#1e293b] border border-[#334155] text-[#94a3b8] hover:text-white hover:border-[#475569]"
               }`}

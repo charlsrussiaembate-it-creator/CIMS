@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
+import DevTool from "./components/DevTool";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 import ComputersPage from "./pages/ComputersPage";
@@ -53,51 +54,67 @@ export default function App() {
     });
   }, []);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="auth-view-enter h-full">
-        <LoginPage
-          onLogin={nextRole => {
-            setRole(nextRole);
-            setIsAuthenticated(true);
-          }}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="cims-app auth-view-enter flex h-full">
-      <Sidebar
+    <div className="relative min-h-screen bg-[#f5f5f7]">
+      {!isAuthenticated ? (
+        <div className="auth-view-enter min-h-screen bg-[#f5f5f7]">
+          <LoginPage
+            onLogin={nextRole => {
+              setRole(nextRole);
+              setIsAuthenticated(true);
+            }}
+          />
+        </div>
+      ) : (
+        <div className="cims-app auth-view-enter flex h-screen overflow-hidden">
+          <Sidebar
+            role={role}
+            onLogout={() => setIsAuthenticated(false)}
+            adminPage={adminPage}
+            setAdminPage={setAdminPage}
+            staffPage={staffPage}
+            setStaffPage={setStaffPage}
+          />
+          <main className="flex-1 overflow-y-auto bg-[#0f172a]">
+            <div key={role === "admin" ? adminPage : staffPage} className="page-enter">
+              {role === "admin" ? (
+                <>
+                  {adminPage === "dashboard" && <AdminDashboard data={data} setPage={setAdminPage} />}
+                  {adminPage === "computers" && <ComputersPage data={data} setData={setData} addLog={addLog} />}
+                  {adminPage === "problems" && <ProblemsPage data={data} setData={setData} role="admin" addLog={addLog} />}
+                  {adminPage === "maintenance" && <MaintenancePage data={data} setData={setData} addLog={addLog} />}
+                  {adminPage === "history" && <HistoryPage data={data} />}
+                  {adminPage === "audit" && <AuditLogPage data={data} />}
+                </>
+              ) : (
+                <>
+                  {staffPage === "dashboard" && <StaffDashboard data={data} setPage={setStaffPage} />}
+                  {staffPage === "report" && <StaffReportPage data={data} setData={setData} setPage={setStaffPage} addLog={addLog} />}
+                  {staffPage === "my-problems" && <ProblemsPage data={data} setData={setData} role="staff" addLog={addLog} />}
+                  {staffPage === "computer-status" && <StaffComputerStatusPage data={data} />}
+                  {staffPage === "maintenance-status" && <StaffMaintenanceStatusPage data={data} />}
+                </>
+              )}
+            </div>
+          </main>
+        </div>
+      )}
+
+      {/* In-Website Developer Tools Panel & Floating Trigger */}
+      <DevTool
+        isAuthenticated={isAuthenticated}
+        setIsAuthenticated={setIsAuthenticated}
         role={role}
-        onLogout={() => setIsAuthenticated(false)}
+        setRole={setRole}
         adminPage={adminPage}
         setAdminPage={setAdminPage}
         staffPage={staffPage}
         setStaffPage={setStaffPage}
+        data={data}
+        setData={setData}
+        onReloadData={loadData}
+        addLog={addLog}
       />
-      <main className="flex-1 overflow-y-auto bg-[#0f172a]">
-        <div key={role === "admin" ? adminPage : staffPage} className="page-enter">
-          {role === "admin" ? (
-            <>
-              {adminPage === "dashboard" && <AdminDashboard data={data} setPage={setAdminPage} />}
-              {adminPage === "computers" && <ComputersPage data={data} setData={setData} addLog={addLog} />}
-              {adminPage === "problems" && <ProblemsPage data={data} setData={setData} role="admin" addLog={addLog} />}
-              {adminPage === "maintenance" && <MaintenancePage data={data} setData={setData} addLog={addLog} />}
-              {adminPage === "history" && <HistoryPage data={data} />}
-              {adminPage === "audit" && <AuditLogPage data={data} />}
-            </>
-          ) : (
-            <>
-              {staffPage === "dashboard" && <StaffDashboard data={data} setPage={setStaffPage} />}
-              {staffPage === "report" && <StaffReportPage data={data} setData={setData} setPage={setStaffPage} addLog={addLog} />}
-              {staffPage === "my-problems" && <ProblemsPage data={data} setData={setData} role="staff" addLog={addLog} />}
-              {staffPage === "computer-status" && <StaffComputerStatusPage data={data} />}
-              {staffPage === "maintenance-status" && <StaffMaintenanceStatusPage data={data} />}
-            </>
-          )}
-        </div>
-      </main>
     </div>
   );
 }

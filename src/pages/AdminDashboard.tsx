@@ -7,9 +7,14 @@ interface Props {
   setPage: (p: AdminPage) => void;
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: number; sub: string; color: string }) {
+function StatCard({ label, value, sub, color, onClick }: { label: string; value: number; sub: string; color: string; onClick?: () => void }) {
   return (
-    <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-5 relative overflow-hidden">
+    <div
+      onClick={onClick}
+      className={`bg-[#1e293b] border border-[#334155] rounded-xl p-5 relative overflow-hidden transition-all ${
+        onClick ? "cursor-pointer hover:border-[#64748b] hover:bg-[#24334a]" : ""
+      }`}
+    >
       <div className={`absolute top-0 left-0 w-1 h-full ${color} rounded-l-xl`} />
       <div className="pl-2">
         <div className="text-3xl font-bold text-white">{value}</div>
@@ -51,10 +56,10 @@ export default function AdminDashboard({ data, setPage }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Computers" value={computers.length} sub={`${active} active`} color="bg-[#0ea5e9]" />
-        <StatCard label="Need Attention" value={needsAttention} sub="maintenance or repair" color="bg-amber-500" />
-        <StatCard label="Open Problems" value={openProblems} sub={`${inProgressProblems} in progress`} color="bg-red-500" />
-        <StatCard label="Maintenance Jobs" value={scheduledMaintenance + inProgressMaintenance} sub={`${completedMaintenance} completed total`} color="bg-emerald-500" />
+        <StatCard label="Total Computers" value={computers.length} sub={`${active} active`} color="bg-[#0ea5e9]" onClick={() => setPage("computers")} />
+        <StatCard label="Need Attention" value={needsAttention} sub="maintenance or repair" color="bg-amber-500" onClick={() => setPage("computers")} />
+        <StatCard label="Open Problems" value={openProblems} sub={`${inProgressProblems} in progress`} color="bg-red-500" onClick={() => setPage("problems")} />
+        <StatCard label="Maintenance Jobs" value={scheduledMaintenance + inProgressMaintenance} sub={`${completedMaintenance} completed total`} color="bg-emerald-500" onClick={() => setPage("maintenance")} />
       </div>
 
       {/* Status bars */}
@@ -73,7 +78,7 @@ export default function AdminDashboard({ data, setPage }: Props) {
                 <span className="text-xs font-mono text-white">{item.count}</span>
               </div>
               <div className="h-1.5 rounded-full bg-[#334155] overflow-hidden">
-                <div className={`h-full ${item.color} rounded-full`} style={{ width: `${(item.count / computers.length) * 100}%` }} />
+                <div className={`h-full ${item.color} rounded-full`} style={{ width: `${computers.length > 0 ? (item.count / computers.length) * 100 : 0}%` }} />
               </div>
             </div>
           ))}

@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
 
 interface ModalProps {
@@ -7,8 +8,10 @@ interface ModalProps {
 }
 
 export default function Modal({ title, onClose, children }: ModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-backdrop-enter">
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-backdrop-enter">
       <div className="bg-[#1e293b] border border-[#334155] rounded-xl shadow-2xl w-full max-w-lg modal-dialog-enter">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#334155]">
           <h2 className="text-base font-semibold text-white">{title}</h2>
@@ -21,6 +24,7 @@ export default function Modal({ title, onClose, children }: ModalProps) {
         </div>
         <div className="px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

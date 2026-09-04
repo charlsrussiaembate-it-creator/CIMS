@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { MAINTENANCE_STATUS_FLOW, MAINTENANCE_TYPES, generateId, todayDate } from "../data";
 import type { AppData, Maintenance, MaintenanceStatus } from "../data";
 import type { UserRole } from "../App";
@@ -32,6 +32,8 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Maintenance | null>(null);
   const [form, setForm] = useState<Omit<Maintenance, "id">>({ ...emptyForm(), computerId: data.computers[0]?.id || "" });
+  const [formError, setFormError] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filtered = data.maintenance.filter(m => {
@@ -45,31 +47,95 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   function openAdd() {
     setEditing(null);
     setForm({ ...emptyForm(), computerId: data.computers[0]?.id || "" });
+    setFormError("");
     setShowModal(true);
   }
 
   function openEdit(m: Maintenance) {
     setEditing(m);
-    setForm({ computerId: m.computerId, maintenanceType: m.maintenanceType, activity: m.activity, technician: m.technician, scheduledDate: m.scheduledDate, completedDate: m.completedDate, status: m.status, notes: m.notes || "" });
+    setForm({
+      computerId: m.computerId,
+      maintenanceType: m.maintenanceType,
+      activity: m.activity,
+      technician: m.technician,
+      scheduledDate: m.scheduledDate,
+      completedDate: m.completedDate || (m.status === "Completed" ? todayDate() : undefined),
+      status: m.status,
+      notes: m.notes || "",
+    });
+    setFormError("");
     setShowModal(true);
   }
 
+  async function syncComputerStatus(computerId: string, newMaintenanceList: Maintenance[], currentComputers: typeof data.computers) {
+    const comp = currentComputers.find(c => c.id === computerId);
+    if (!comp || comp.status === "Decommissioned") return currentComputers;
+
+    const hasActiveMaintenance = newMaintenanceList.some(
+      m => m.computerId === computerId && (m.status === "Scheduled" || m.status === "In Progress")
+    );
+    const hasActiveProblems = data.problems.some(
+      p => p.computerId === computerId && (p.status === "Open" || p.status === "In Progress")
+    );
+
+    let newStatus: typeof comp.status | null = null;
+    if (!hasActiveMaintenance && !hasActiveProblems && (comp.status === "Needs Maintenance" || comp.status === "Under Repair")) {
+      newStatus = "Active";
+    } else if (hasActiveMaintenance) {
+      const isRepairing = newMaintenanceList.some(
+        m => m.computerId === computerId && m.status === "In Progress"
+      );
+      newStatus = isRepairing ? "Under Repair" : "Needs Maintenance";
+    }
+
+    if (newStatus && newStatus !== comp.status) {
+      await api.updateComputer(computerId, { status: newStatus }).catch(() => null);
+      addLog("admin", "Admin", "Computer Status Updated", `${computerId} status set to ${newStatus}`);
+      return currentComputers.map(c => c.id === computerId ? { ...c, status: newStatus! } : c);
+    }
+    return currentComputers;
+  }
+
   async function handleSave() {
-    if (!form.activity.trim() || !form.technician.trim()) return;
+    setFormError("");
+    if (!form.computerId) {
+      setFormError("Please select a computer.");
+      return;
+    }
+    if (!form.activity.trim()) {
+      setFormError("Activity description is required.");
+      return;
+    }
+    if (!form.technician.trim()) {
+      setFormError("Technician name is required.");
+      return;
+    }
+
+    const payload = {
+      ...form,
+      completedDate: form.status === "Completed" ? (form.completedDate || todayDate()) : undefined,
+    };
+
     setIsSubmitting(true);
     try {
       if (editing) {
-        const updated = await api.updateMaintenance(editing.id, form).catch(() => ({ ...editing, ...form }));
-        setData({ ...data, maintenance: data.maintenance.map(m => m.id === editing.id ? { ...m, ...updated } : m) });
-        addLog("admin", "Admin", "Maintenance Updated", `Updated ${editing.id} on ${editing.computerId}`);
+        const updated = await api.updateMaintenance(editing.id, payload).catch(() => ({ ...editing, ...payload }));
+        const updatedMaintenance = data.maintenance.map(m => m.id === editing.id ? { ...m, ...updated } : m);
+        const updatedComputers = await syncComputerStatus(payload.computerId, updatedMaintenance, data.computers);
+        setData({ ...data, maintenance: updatedMaintenance, computers: updatedComputers });
+        addLog("admin", "Admin", "Maintenance Updated", `Updated ${editing.id} on ${editing.computerId} (Status: ${payload.status})`);
       } else {
         const id = generateId("MNT", data.maintenance);
-        const newM: Maintenance = { id, ...form };
+        const newM: Maintenance = { id, ...payload };
         const saved = await api.createMaintenance(newM).catch(() => newM);
-        setData({ ...data, maintenance: [saved, ...data.maintenance] });
-        addLog("admin", "Admin", "Maintenance Scheduled", `Scheduled ${id} — ${form.maintenanceType} on ${form.computerId} for ${form.scheduledDate}`);
+        const updatedMaintenance = [saved, ...data.maintenance];
+        const updatedComputers = await syncComputerStatus(payload.computerId, updatedMaintenance, data.computers);
+        setData({ ...data, maintenance: updatedMaintenance, computers: updatedComputers });
+        addLog("admin", "Admin", "Maintenance Scheduled", `Scheduled ${id} — ${payload.maintenanceType} on ${payload.computerId} for ${payload.scheduledDate}`);
       }
       setShowModal(false);
+    } catch (err: any) {
+      setFormError(err.message || "Failed to save maintenance record.");
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +144,12 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   async function handleDelete(id: string) {
     try {
       await api.deleteMaintenance(id).catch(() => null);
-      setData({ ...data, maintenance: data.maintenance.filter(m => m.id !== id) });
+      const targetMaint = data.maintenance.find(m => m.id === id);
+      const remainingMaintenance = data.maintenance.filter(m => m.id !== id);
+      const updatedComputers = targetMaint
+        ? await syncComputerStatus(targetMaint.computerId, remainingMaintenance, data.computers)
+        : data.computers;
+      setData({ ...data, maintenance: remainingMaintenance, computers: updatedComputers });
       addLog("admin", "Admin", "Maintenance Deleted", `Deleted maintenance record ${id}`);
     } finally {
       setDeleteConfirm(null);
@@ -92,7 +163,9 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
     if (next === "Completed") updates.completedDate = todayDate();
     try {
       await api.updateMaintenance(m.id, updates).catch(() => null);
-      setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, ...updates } : x) });
+      const updatedMaintenance: Maintenance[] = data.maintenance.map(x => x.id === m.id ? { ...x, ...updates } : x);
+      const updatedComputers = await syncComputerStatus(m.computerId, updatedMaintenance, data.computers);
+      setData({ ...data, maintenance: updatedMaintenance, computers: updatedComputers });
       addLog("admin", "Admin", `Maintenance ${next}`, `${m.id} status: ${m.status} → ${next} on ${m.computerId}`);
     } catch {
       // Fallback
@@ -102,7 +175,9 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
   async function cancelMaintenance(m: Maintenance) {
     try {
       await api.updateMaintenance(m.id, { status: "Cancelled" }).catch(() => null);
-      setData({ ...data, maintenance: data.maintenance.map(x => x.id === m.id ? { ...x, status: "Cancelled" } : x) });
+      const updatedMaintenance: Maintenance[] = data.maintenance.map(x => x.id === m.id ? { ...x, status: "Cancelled" as MaintenanceStatus } : x);
+      const updatedComputers = await syncComputerStatus(m.computerId, updatedMaintenance, data.computers);
+      setData({ ...data, maintenance: updatedMaintenance, computers: updatedComputers });
       addLog("admin", "Admin", "Maintenance Cancelled", `Cancelled ${m.id} on ${m.computerId}`);
     } catch {
       // Fallback
@@ -175,48 +250,79 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
             {sorted.map(m => {
               const computer = data.computers.find(c => c.id === m.computerId);
               const nextStatus = MAINTENANCE_STATUS_FLOW[m.status];
+              const isExpanded = expandedId === m.id;
               return (
-                <tr key={m.id} className="hover:bg-[#0f172a] transition-colors group">
-                  <td className="px-5 py-3.5">
-                    <span className="font-mono text-[#475569] text-xs">{m.id}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="font-mono text-[#0ea5e9] text-xs">{m.computerId}</div>
-                    {computer && <div className="text-[10px] text-[#475569] mt-0.5">{computer.location}</div>}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="text-xs text-[#64748b] mb-0.5">{m.maintenanceType}</div>
-                    <div className="text-sm text-white max-w-52 truncate" title={m.activity}>{m.activity}</div>
-                    {m.notes && <div className="text-[10px] text-[#475569] mt-0.5 italic truncate max-w-52">{m.notes}</div>}
-                  </td>
-                  <td className="px-5 py-3.5 text-[#94a3b8] text-xs">{m.technician}</td>
-                  <td className="px-5 py-3.5">
-                    <div className="text-xs font-mono text-[#64748b]">{m.scheduledDate}</div>
-                    {m.completedDate && <div className="text-[10px] text-emerald-500 mt-0.5">Done: {m.completedDate}</div>}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex flex-col gap-1.5 items-end">
-                      {nextStatus && (
-                        <button
-                          onClick={() => advanceStatus(m)}
-                          className="text-xs px-2.5 py-1 bg-[#0f172a] border border-[#0ea5e9] text-[#0ea5e9] rounded hover:bg-[#0ea5e9] hover:text-[#0f172a] transition-colors whitespace-nowrap"
-                        >
-                          → {nextStatus}
-                        </button>
-                      )}
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(m)} className="text-xs text-[#64748b] hover:text-[#0ea5e9] transition-colors px-1.5 py-0.5">Edit</button>
-                        {m.status !== "Cancelled" && m.status !== "Completed" && (
-                          <button onClick={() => cancelMaintenance(m)} className="text-xs text-[#64748b] hover:text-amber-400 transition-colors px-1.5 py-0.5">Cancel</button>
-                        )}
-                        <button onClick={() => setDeleteConfirm(m.id)} className="text-xs text-[#64748b] hover:text-red-400 transition-colors px-1.5 py-0.5">Del</button>
+                <React.Fragment key={m.id}>
+                  <tr
+                    className="hover:bg-[#0f172a] transition-colors group cursor-pointer"
+                    onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[#475569] text-xs transition-transform inline-block ${isExpanded ? "rotate-90" : ""}`}>›</span>
+                        <span className="font-mono text-[#475569] text-xs">{m.id}</span>
                       </div>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="font-mono text-[#0ea5e9] text-xs">{m.computerId}</div>
+                      {computer && <div className="text-[10px] text-[#475569] mt-0.5">{computer.location}</div>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="text-xs text-[#64748b] mb-0.5">{m.maintenanceType}</div>
+                      <div className="text-sm text-white max-w-52 truncate" title={m.activity}>{m.activity}</div>
+                      {m.notes && <div className="text-[10px] text-[#475569] mt-0.5 italic truncate max-w-52">{m.notes}</div>}
+                    </td>
+                    <td className="px-5 py-3.5 text-[#94a3b8] text-xs">{m.technician}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="text-xs font-mono text-[#64748b]">{m.scheduledDate}</div>
+                      {m.completedDate && <div className="text-[10px] text-emerald-500 mt-0.5">Done: {m.completedDate}</div>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} />
+                    </td>
+                    <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
+                      <div className="flex flex-col gap-1.5 items-end">
+                        {nextStatus && (
+                          <button
+                            onClick={() => advanceStatus(m)}
+                            className="text-xs px-2.5 py-1 bg-[#0f172a] border border-[#0ea5e9] text-[#0ea5e9] rounded hover:bg-[#0ea5e9] hover:text-[#0f172a] transition-colors whitespace-nowrap"
+                          >
+                            → {nextStatus}
+                          </button>
+                        )}
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(m)} className="text-xs text-[#64748b] hover:text-[#0ea5e9] transition-colors px-1.5 py-0.5">Edit</button>
+                          {m.status !== "Cancelled" && m.status !== "Completed" && (
+                            <button onClick={() => cancelMaintenance(m)} className="text-xs text-[#64748b] hover:text-amber-400 transition-colors px-1.5 py-0.5">Cancel</button>
+                          )}
+                          <button onClick={() => setDeleteConfirm(m.id)} className="text-xs text-[#64748b] hover:text-red-400 transition-colors px-1.5 py-0.5">Del</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr className="bg-[#0f172a]">
+                      <td colSpan={7} className="px-5 py-4">
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center gap-6 text-[#94a3b8]">
+                            <div><span className="text-[#475569]">Activity:</span> <span className="text-white font-medium">{m.activity}</span></div>
+                            <div><span className="text-[#475569]">Technician:</span> <span className="text-[#0ea5e9]">{m.technician}</span></div>
+                          </div>
+                          {m.notes && (
+                            <div className="text-[#94a3b8] bg-[#1e293b] p-3 rounded border border-[#334155]">
+                              <span className="text-[#475569] font-medium block mb-1">Technician Notes:</span>
+                              {m.notes}
+                            </div>
+                          )}
+                          <div className="text-[11px] text-[#475569] flex gap-4">
+                            <span>Scheduled: {m.scheduledDate}</span>
+                            {m.completedDate && <span className="text-emerald-400">Completed Date: {m.completedDate}</span>}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
             {sorted.length === 0 && (
@@ -229,11 +335,20 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
       {showModal && (
         <Modal title={editing ? `Edit ${editing.id}` : "Schedule Maintenance"} onClose={() => setShowModal(false)}>
           <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {formError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
+                {formError}
+              </div>
+            )}
             <div>
-              <label className={lbl}>Computer</label>
-              <select className={f} value={form.computerId} onChange={e => setForm({ ...form, computerId: e.target.value })}>
-                {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} — {c.location}</option>)}
-              </select>
+              <label className={lbl}>Computer *</label>
+              {data.computers.length === 0 ? (
+                <div className="text-xs text-red-400 p-2 bg-red-500/10 rounded">No computers registered yet. Please add a computer first.</div>
+              ) : (
+                <select className={f} value={form.computerId} onChange={e => setForm({ ...form, computerId: e.target.value })}>
+                  {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} — {c.location}</option>)}
+                </select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -244,18 +359,29 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
               </div>
               <div>
                 <label className={lbl}>Status</label>
-                <select className={f} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as MaintenanceStatus })}>
+                <select
+                  className={f}
+                  value={form.status}
+                  onChange={e => {
+                    const nextSt = e.target.value as MaintenanceStatus;
+                    setForm({
+                      ...form,
+                      status: nextSt,
+                      completedDate: nextSt === "Completed" ? (form.completedDate || todayDate()) : undefined,
+                    });
+                  }}
+                >
                   {ALL_STATUSES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className={lbl}>Activity Description</label>
+              <label className={lbl}>Activity Description *</label>
               <input className={f} value={form.activity} onChange={e => setForm({ ...form, activity: e.target.value })} placeholder="e.g. Full system dust removal and thermal paste replacement" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={lbl}>Assigned Technician</label>
+                <label className={lbl}>Assigned Technician *</label>
                 <input className={f} value={form.technician} onChange={e => setForm({ ...form, technician: e.target.value })} placeholder="Engr. Name" />
               </div>
               <div>
@@ -263,6 +389,17 @@ export default function MaintenancePage({ data, setData, addLog }: Props) {
                 <input type="date" className={f} value={form.scheduledDate} onChange={e => setForm({ ...form, scheduledDate: e.target.value })} />
               </div>
             </div>
+            {form.status === "Completed" && (
+              <div>
+                <label className={lbl}>Completed Date</label>
+                <input
+                  type="date"
+                  className={f}
+                  value={form.completedDate || todayDate()}
+                  onChange={e => setForm({ ...form, completedDate: e.target.value })}
+                />
+              </div>
+            )}
             <div>
               <label className={lbl}>Notes (optional)</label>
               <textarea className={`${f} resize-none h-20`} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Any additional notes or instructions…" />

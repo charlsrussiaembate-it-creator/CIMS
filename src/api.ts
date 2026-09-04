@@ -16,6 +16,28 @@ export interface LoginResponse {
   user: AuthUser;
 }
 
+export interface ApiLogEntry {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  status?: number;
+  durationMs: number;
+  payload?: any;
+  response?: any;
+  error?: string;
+}
+
+type ApiLogListener = (log: ApiLogEntry) => void;
+const apiLogListeners = new Set<ApiLogListener>();
+
+export function onApiLog(listener: ApiLogListener): () => void {
+  apiLogListeners.add(listener);
+  return () => {
+    apiLogListeners.delete(listener);
+  };
+}
+
 async function request<T>(
   url: string,
   options: RequestInit = {}
@@ -25,28 +47,81 @@ async function request<T>(
     Accept: "application/json",
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...(options.headers || {}),
-    },
-  });
+  const startTime = performance.now();
+  const logId = Math.random().toString(36).slice(2, 9);
+  const method = options.method || "GET";
+  let payload: any = undefined;
+  if (options.body && typeof options.body === "string") {
+    try {
+      payload = JSON.parse(options.body);
+    } catch {
+      payload = options.body;
+    }
+  }
 
-  const text = await response.text();
-  let data: any;
   try {
-    data = text ? JSON.parse(text) : {};
-  } catch (e) {
-    throw new Error(text || `Server responded with status ${response.status}`);
-  }
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers || {}),
+      },
+    });
 
-  if (!response.ok) {
-    const message = data.error || data.details || `Error ${response.status}`;
-    throw new Error(message);
-  }
+    const text = await response.text();
+    let data: any;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      throw new Error(text || `Server responded with status ${response.status}`);
+    }
 
-  return data as T;
+    const durationMs = Math.round(performance.now() - startTime);
+
+    if (!response.ok) {
+      const message = data.error || data.details || `Error ${response.status}`;
+      const logEntry: ApiLogEntry = {
+        id: logId,
+        timestamp: new Date().toLocaleTimeString(),
+        method,
+        url,
+        status: response.status,
+        durationMs,
+        payload,
+        error: message,
+      };
+      apiLogListeners.forEach(fn => fn(logEntry));
+      throw new Error(message);
+    }
+
+    const logEntry: ApiLogEntry = {
+      id: logId,
+      timestamp: new Date().toLocaleTimeString(),
+      method,
+      url,
+      status: response.status,
+      durationMs,
+      payload,
+      response: data,
+    };
+    apiLogListeners.forEach(fn => fn(logEntry));
+
+    return data as T;
+  } catch (err: any) {
+    const durationMs = Math.round(performance.now() - startTime);
+    const logEntry: ApiLogEntry = {
+      id: logId,
+      timestamp: new Date().toLocaleTimeString(),
+      method,
+      url,
+      status: 0,
+      durationMs,
+      payload,
+      error: err.message || "Network Error",
+    };
+    apiLogListeners.forEach(fn => fn(logEntry));
+    throw err;
+  }
 }
 
 export const api = {
@@ -59,6 +134,16 @@ export const api = {
     } catch {
       return false;
     }
+  },
+
+  async devReset(): Promise<AppData> {
+    return request<AppData>(`${API_BASE_URL}?resource=dev-reset`, {
+      method: "POST",
+    });
+  },
+
+  async devStatus(): Promise<any> {
+    return request<any>(`${API_BASE_URL}?resource=dev-status`);
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {
