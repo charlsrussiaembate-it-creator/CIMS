@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
 import DevTool from "./components/DevTool";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
@@ -25,6 +26,7 @@ export default function App() {
   const [role, setRole] = useState<UserRole>("admin");
   const [adminPage, setAdminPage] = useState<AdminPage>("dashboard");
   const [staffPage, setStaffPage] = useState<StaffPage>("dashboard");
+  const [computerLocationFilter, setComputerLocationFilter] = useState<string>("All");
   const [data, setData] = useState<AppData>(initialData);
 
   const loadData = useCallback(async () => {
@@ -66,37 +68,59 @@ export default function App() {
           />
         </div>
       ) : (
-        <div className="cims-app auth-view-enter flex h-screen overflow-hidden">
-          <Sidebar
+        <div className="cims-app auth-view-enter flex flex-col h-screen overflow-hidden">
+          <Header
             role={role}
-            onLogout={() => setIsAuthenticated(false)}
             adminPage={adminPage}
-            setAdminPage={setAdminPage}
             staffPage={staffPage}
-            setStaffPage={setStaffPage}
+            data={data}
+            computerLocationFilter={computerLocationFilter}
+            setComputerLocationFilter={setComputerLocationFilter}
+            onLogout={() => setIsAuthenticated(false)}
           />
-          <main className="flex-1 overflow-y-auto bg-[#0f172a]">
-            <div key={role === "admin" ? adminPage : staffPage} className="page-enter">
-              {role === "admin" ? (
-                <>
-                  {adminPage === "dashboard" && <AdminDashboard data={data} setPage={setAdminPage} />}
-                  {adminPage === "computers" && <ComputersPage data={data} setData={setData} addLog={addLog} />}
-                  {adminPage === "problems" && <ProblemsPage data={data} setData={setData} role="admin" addLog={addLog} />}
-                  {adminPage === "maintenance" && <MaintenancePage data={data} setData={setData} addLog={addLog} />}
-                  {adminPage === "history" && <HistoryPage data={data} />}
-                  {adminPage === "audit" && <AuditLogPage data={data} />}
-                </>
-              ) : (
-                <>
-                  {staffPage === "dashboard" && <StaffDashboard data={data} setPage={setStaffPage} />}
-                  {staffPage === "report" && <StaffReportPage data={data} setData={setData} setPage={setStaffPage} addLog={addLog} />}
-                  {staffPage === "my-problems" && <ProblemsPage data={data} setData={setData} role="staff" addLog={addLog} />}
-                  {staffPage === "computer-status" && <StaffComputerStatusPage data={data} />}
-                  {staffPage === "maintenance-status" && <StaffMaintenanceStatusPage data={data} />}
-                </>
-              )}
-            </div>
-          </main>
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar
+              role={role}
+              onLogout={() => setIsAuthenticated(false)}
+              adminPage={adminPage}
+              setAdminPage={setAdminPage}
+              staffPage={staffPage}
+              setStaffPage={setStaffPage}
+              data={data}
+              computerLocationFilter={computerLocationFilter}
+              setComputerLocationFilter={setComputerLocationFilter}
+            />
+            <main className="flex-1 overflow-y-auto bg-[#0b1329]">
+              <div key={role === "admin" ? adminPage : staffPage} className="page-enter">
+                {role === "admin" ? (
+                  <>
+                    {adminPage === "dashboard" && <AdminDashboard data={data} setPage={setAdminPage} />}
+                    {adminPage === "computers" && (
+                      <ComputersPage
+                        data={data}
+                        setData={setData}
+                        addLog={addLog}
+                        activeLocationFilter={computerLocationFilter}
+                        setActiveLocationFilter={setComputerLocationFilter}
+                      />
+                    )}
+                    {adminPage === "problems" && <ProblemsPage data={data} setData={setData} role="admin" addLog={addLog} />}
+                    {adminPage === "maintenance" && <MaintenancePage data={data} setData={setData} addLog={addLog} />}
+                    {adminPage === "history" && <HistoryPage data={data} />}
+                    {adminPage === "audit" && <AuditLogPage data={data} />}
+                  </>
+                ) : (
+                  <>
+                    {staffPage === "dashboard" && <StaffDashboard data={data} setPage={setStaffPage} />}
+                    {staffPage === "report" && <StaffReportPage data={data} setData={setData} setPage={setStaffPage} addLog={addLog} />}
+                    {staffPage === "my-problems" && <ProblemsPage data={data} setData={setData} role="staff" addLog={addLog} />}
+                    {staffPage === "computer-status" && <StaffComputerStatusPage data={data} />}
+                    {staffPage === "maintenance-status" && <StaffMaintenanceStatusPage data={data} />}
+                  </>
+                )}
+              </div>
+            </main>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import type { AppData } from "../data";
 import StatusBadge, { getMaintenanceStatusVariant } from "../components/StatusBadge";
+import { AppIcon } from "../components/Icons";
 
 interface Props {
   data: AppData;
@@ -35,8 +36,12 @@ export default function StaffMaintenanceStatusPage({ data }: Props) {
               const computer = data.computers.find(c => c.id === m.computerId);
               return (
                 <div key={m.id} className="bg-[#1e293b] border border-[#334155] rounded-xl p-4 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#0f172a] border border-[#334155] flex items-center justify-center text-lg flex-shrink-0">
-                    {m.status === "In Progress" ? "🔧" : "📅"}
+                  <div className="w-10 h-10 rounded-lg bg-[#0f172a] border border-[#334155] flex items-center justify-center flex-shrink-0">
+                    <AppIcon
+                      name={m.status === "In Progress" ? "tool" : "calendar"}
+                      size={18}
+                      className={m.status === "In Progress" ? "text-amber-400" : "text-sky-400"}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">

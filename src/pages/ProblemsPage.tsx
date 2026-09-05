@@ -4,6 +4,7 @@ import type { AppData, Problem, ProblemStatus } from "../data";
 import type { UserRole } from "../App";
 import StatusBadge, { getProblemStatusVariant } from "../components/StatusBadge";
 import Modal from "../components/Modal";
+import { AppIcon } from "../components/Icons";
 import { api } from "../api";
 
 interface Props {
@@ -15,46 +16,78 @@ interface Props {
 
 const ALL_STATUSES: ProblemStatus[] = ["Open", "In Progress", "Resolved", "Closed"];
 
-const STATUS_LABELS: Record<ProblemStatus, string> = {
-  "Open": "Reported, awaiting admin review",
-  "In Progress": "Admin is working on this issue",
-  "Resolved": "Issue has been fixed",
-  "Closed": "Verified and closed",
+const STATUS_DESCRIPTIONS: Record<ProblemStatus, string> = {
+  "Open": "Newly filed issue awaiting technician review",
+  "In Progress": "Hardware/software diagnosis actively underway",
+  "Resolved": "Repair completed; awaiting verification",
+  "Closed": "Issue verified resolved and archived",
 };
 
 export default function ProblemsPage({ data, setData, role, addLog }: Props) {
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterComputer, setFilterComputer] = useState("All");
+  const [filterStatus, setFilterStatus] = useState<string>("All");
+  const [filterComputer, setFilterComputer] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editing, setEditing] = useState<Problem | null>(null);
-  const [form, setForm] = useState({ computerId: data.computers[0]?.id || "", description: "", reportedBy: "", status: "Open" as ProblemStatus });
+  const [form, setForm] = useState({
+    computerId: data.computers[0]?.id || "",
+    description: "",
+    reportedBy: "",
+    status: "Open" as ProblemStatus,
+  });
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Counts for pipeline tabs
+  const openCount = data.problems.filter(p => p.status === "Open").length;
+  const inProgressCount = data.problems.filter(p => p.status === "In Progress").length;
+  const resolvedCount = data.problems.filter(p => p.status === "Resolved").length;
+  const closedCount = data.problems.filter(p => p.status === "Closed").length;
+
   const filtered = data.problems.filter(p => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch =
+      p.description.toLowerCase().includes(q) ||
+      p.computerId.toLowerCase().includes(q) ||
+      p.reportedBy.toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q);
     const matchStatus = filterStatus === "All" || p.status === filterStatus;
     const matchComputer = filterComputer === "All" || p.computerId === filterComputer;
-    return matchStatus && matchComputer;
+    return matchSearch && matchStatus && matchComputer;
   });
 
   const sorted = [...filtered].sort((a, b) => b.dateReported.localeCompare(a.dateReported));
 
   function openAdd() {
     setEditing(null);
-    setForm({ computerId: data.computers[0]?.id || "", description: "", reportedBy: role === "admin" ? "Admin" : "", status: "Open" });
+    setForm({
+      computerId: data.computers[0]?.id || "",
+      description: "",
+      reportedBy: role === "admin" ? "Admin" : "",
+      status: "Open",
+    });
     setFormError("");
     setShowModal(true);
   }
 
   function openEdit(p: Problem) {
     setEditing(p);
-    setForm({ computerId: p.computerId, description: p.description, reportedBy: p.reportedBy, status: p.status });
+    setForm({
+      computerId: p.computerId,
+      description: p.description,
+      reportedBy: p.reportedBy,
+      status: p.status,
+    });
     setFormError("");
     setShowModal(true);
   }
 
-  async function syncComputerStatus(computerId: string, newProblemsList: Problem[], currentComputers: typeof data.computers) {
+  async function syncComputerStatus(
+    computerId: string,
+    newProblemsList: Problem[],
+    currentComputers: typeof data.computers
+  ) {
     const comp = currentComputers.find(c => c.id === computerId);
     if (!comp || comp.status === "Decommissioned") return currentComputers;
 
@@ -74,7 +107,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
 
     if (newStatus && newStatus !== comp.status) {
       await api.updateComputer(computerId, { status: newStatus }).catch(() => null);
-      addLog("admin", "Admin", "Computer Status Updated", `${computerId} status set to ${newStatus}`);
+      addLog("admin", "Admin", "Computer Status Updated", `${computerId} status synchronized to ${newStatus}`);
       return currentComputers.map(c => c.id === computerId ? { ...c, status: newStatus! } : c);
     }
     return currentComputers;
@@ -83,11 +116,11 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   async function handleSave() {
     setFormError("");
     if (!form.computerId) {
-      setFormError("Please select a computer.");
+      setFormError("Please select an affected workstation.");
       return;
     }
     if (!form.description.trim()) {
-      setFormError("Description is required.");
+      setFormError("Problem description is required.");
       return;
     }
     if (!form.reportedBy.trim()) {
@@ -114,7 +147,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       }
       setShowModal(false);
     } catch (err: any) {
-      setFormError(err.message || "Failed to save problem.");
+      setFormError(err.message || "Failed to save problem report.");
     } finally {
       setIsSubmitting(false);
     }
@@ -149,171 +182,370 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
     }
   }
 
-  const f = "w-full bg-[#0f172a] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white placeholder-[#475569] focus:border-[#0ea5e9] transition-colors";
-  const lbl = "block text-xs font-medium text-[#64748b] mb-1.5";
-
-  const openCount = data.problems.filter(p => p.status === "Open").length;
-  const inProgressCount = data.problems.filter(p => p.status === "In Progress").length;
+  const f = "w-full bg-[#131d33] border border-[#334155] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-[#64748b] focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-all";
+  const lbl = "block text-xs font-semibold text-[#94a3b8] mb-1.5";
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
         <div>
-          <h1 className="text-2xl font-bold text-white">{role === "staff" ? "Problem Reports" : "Problems"}</h1>
-          <p className="text-sm text-[#64748b] mt-0.5">
-            <span className="text-red-400">{openCount} open</span>
-            <span className="text-[#334155] mx-2">·</span>
-            <span className="text-amber-400">{inProgressCount} in progress</span>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-black text-white tracking-tight">
+              {role === "staff" ? "Problem Reports" : "Problem & Incident Management"}
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+              {openCount} Open Tickets
+            </span>
+          </div>
+          <p className="text-xs text-[#94a3b8] mt-1">
+            Track reported laboratory hardware anomalies, display faults, and maintenance requests
           </p>
         </div>
+
         <div className="flex items-center gap-3">
-          {role === "staff" && (
-            <span className="text-xs text-[#475569] bg-[#1e293b] border border-[#334155] px-3 py-1.5 rounded-lg">
-              View only — use "Report Problem" to submit
+          {role === "staff" ? (
+            <span className="text-xs text-[#64748b] bg-[#0f172a] border border-[#1e293b] px-3.5 py-2 rounded-xl">
+              Staff View · Use "Report Problem" to file an issue
             </span>
-          )}
-          {role === "admin" && (
-            <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] transition-colors">
-              + Add Problem
+          ) : (
+            <button
+              type="button"
+              onClick={openAdd}
+              className="btn-destructive"
+            >
+              <AppIcon name="plus" size={13} />
+              <span>Log New Problem</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Status workflow legend */}
-      <div className="flex items-center gap-2 mb-5 p-3 bg-[#1e293b] border border-[#334155] rounded-lg flex-wrap">
-        <span className="text-[10px] text-[#475569] mr-1">Workflow:</span>
-        {ALL_STATUSES.map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <StatusBadge label={s} variant={getProblemStatusVariant(s)} />
-            {i < ALL_STATUSES.length - 1 && <span className="text-[#334155] text-xs">→</span>}
-          </div>
+      {/* Pipeline Status Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {[
+          { id: "All", label: "All Tickets", count: data.problems.length, color: "text-white" },
+          { id: "Open", label: "Open", count: openCount, color: "text-rose-400" },
+          { id: "In Progress", label: "In Progress", count: inProgressCount, color: "text-amber-400" },
+          { id: "Resolved", label: "Resolved", count: resolvedCount, color: "text-emerald-400" },
+          { id: "Closed", label: "Closed", count: closedCount, color: "text-slate-400" },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setFilterStatus(tab.id)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 flex-shrink-0 ${
+              filterStatus === tab.id
+                ? "bg-[#0ea5e9] text-[#0b1329] shadow-md shadow-[#0ea5e9]/25"
+                : "bg-[#0f172a] border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155]"
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                filterStatus === tab.id ? "bg-[#0b1329]/20 text-[#0b1329]" : "bg-[#131d33] text-[#64748b]"
+              }`}
+            >
+              {tab.count}
+            </span>
+          </button>
         ))}
-        {role === "admin" && <span className="text-[10px] text-[#475569] ml-2">— Admin controls status transitions</span>}
-        {role === "staff" && <span className="text-[10px] text-[#475569] ml-2">— Admin handles status updates</span>}
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-5">
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-[#1e293b] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white focus:border-[#0ea5e9] transition-colors">
-          <option>All</option>
-          {ALL_STATUSES.map(s => <option key={s}>{s}</option>)}
-        </select>
-        <select value={filterComputer} onChange={e => setFilterComputer(e.target.value)} className="bg-[#1e293b] border border-[#334155] rounded-lg px-3 py-2 text-sm text-white focus:border-[#0ea5e9] transition-colors">
-          <option>All</option>
-          {data.computers.map(c => <option key={c.id}>{c.id}</option>)}
-        </select>
+      {/* Filter & Search Bar */}
+      <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <input
+            type="text"
+            placeholder="Search problems, computer ID, or reporter…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full bg-[#131d33] border border-[#334155] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-[#64748b] focus:border-[#0ea5e9] transition-colors"
+          />
+          <span className="absolute left-3 top-2.5 text-[#64748b] pointer-events-none flex items-center">
+            <AppIcon name="search" size={13} />
+          </span>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-2.5 text-[#64748b] hover:text-white flex items-center"
+            >
+              <AppIcon name="close" size={12} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <span className="text-xs text-[#94a3b8]">Computer:</span>
+          <select
+            value={filterComputer}
+            onChange={e => setFilterComputer(e.target.value)}
+            className="bg-[#131d33] border border-[#334155] rounded-xl px-3 py-1.5 text-xs text-white focus:border-[#0ea5e9] transition-colors"
+          >
+            <option value="All">All Workstations</option>
+            {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} ({c.location})</option>)}
+          </select>
+        </div>
       </div>
 
-      {/* Cards */}
-      <div className="space-y-3">
+      {/* Problem Cards List */}
+      <div className="space-y-4">
         {sorted.map(p => {
           const computer = data.computers.find(c => c.id === p.computerId);
           const nextStatus = PROBLEM_STATUS_FLOW[p.status];
+          const isResolved = p.status === "Resolved" || p.status === "Closed";
+
           return (
-            <div key={p.id} className="bg-[#1e293b] border border-[#334155] rounded-xl p-5 hover:border-[#475569] transition-colors group">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <span className="font-mono text-xs text-[#475569]">{p.id}</span>
-                    <span className="font-mono text-xs text-[#0ea5e9]">{p.computerId}</span>
-                    {computer && <span className="text-xs text-[#475569]">{computer.location}</span>}
-                    <StatusBadge label={p.status} variant={getProblemStatusVariant(p.status)} />
-                  </div>
-                  <p className="text-sm text-[#f1f5f9] leading-relaxed mb-2">{p.description}</p>
-                  <div className="text-[11px] text-[#475569]">
-                    <span className="text-[#334155] italic">{STATUS_LABELS[p.status]}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-[11px] text-[#475569] mt-1">
-                    <span>Reported by <span className="text-[#64748b]">{p.reportedBy}</span></span>
-                    <span className="font-mono">{p.dateReported}</span>
-                  </div>
+            <div
+              key={p.id}
+              className="bg-[#0f172a] border border-[#1e293b] hover:border-[#334155] rounded-xl p-5 transition-all space-y-4 shadow-sm group"
+            >
+              {/* Header Info */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-mono text-xs font-black text-[#38bdf8] bg-[#0284c7]/10 px-2.5 py-1 rounded-lg border border-[#0284c7]/20">
+                    {p.computerId}
+                  </span>
+                  <span className="font-mono text-xs text-[#64748b]">{p.id}</span>
+                  {computer && (
+                    <span className="text-xs text-[#94a3b8] flex items-center gap-1">
+                      <AppIcon name="location" size={11} className="text-[#64748b]" />
+                      <span>{computer.location}</span>
+                    </span>
+                  )}
+                  <StatusBadge label={p.status} variant={getProblemStatusVariant(p.status)} />
                 </div>
-                {role === "admin" && (
-                  <div className="flex flex-col gap-2 flex-shrink-0 items-end">
+
+                <div className="text-[11px] text-[#64748b] flex items-center gap-2">
+                  <span>Reported on: <strong className="text-[#94a3b8] font-mono">{p.dateReported}</strong></span>
+                  <span>·</span>
+                  <span>by <strong className="text-white">{p.reportedBy}</strong></span>
+                </div>
+              </div>
+
+              {/* Description Body */}
+              <div className="bg-[#131d33] border border-[#1e293b] rounded-xl p-4">
+                <p className="text-sm text-white leading-relaxed">{p.description}</p>
+                <div className="text-[11px] text-[#64748b] mt-2 italic flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-[#38bdf8] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                    <line x1="12" y1="16" x2="12" y2="12" strokeWidth="2"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="2"/>
+                  </svg>
+                  <span>{STATUS_DESCRIPTIONS[p.status]}</span>
+                </div>
+              </div>
+
+              {/* Visual Workflow Steps Bar */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <span className="text-[10px] uppercase font-bold text-[#64748b] mr-2">Lifecycle:</span>
+                {ALL_STATUSES.map((st, i) => {
+                  const isCurrent = p.status === st;
+                  const isPassed = ALL_STATUSES.indexOf(p.status) > i;
+
+                  return (
+                    <div key={st} className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold flex items-center gap-1 ${
+                          isCurrent
+                            ? "bg-[#0ea5e9]/20 text-[#38bdf8] border border-[#0ea5e9]/40"
+                            : isPassed
+                            ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+                            : "text-[#475569] bg-[#1e293b]/40"
+                        }`}
+                      >
+                        {isPassed && <AppIcon name="check" size={10} className="text-emerald-400" />}
+                        <span>{st}</span>
+                      </span>
+                      {i < ALL_STATUSES.length - 1 && <span className="text-[#334155] text-xs">→</span>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Action Controls */}
+              {role === "admin" && (
+                <div className="pt-3 border-t border-[#1e293b] flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
                     {nextStatus && (
                       <button
+                        type="button"
                         onClick={() => advanceStatus(p)}
-                        className="text-xs px-3 py-1.5 bg-[#0f172a] border border-[#0ea5e9] text-[#0ea5e9] rounded-lg hover:bg-[#0ea5e9] hover:text-[#0f172a] transition-colors font-medium whitespace-nowrap"
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${
+                          nextStatus === "Resolved"
+                            ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+                            : nextStatus === "In Progress"
+                            ? "bg-amber-500 hover:bg-amber-600 text-[#0b1329] shadow-amber-500/20"
+                            : "bg-[#0ea5e9] hover:bg-[#38bdf8] text-[#0b1329] shadow-sky-500/20"
+                        }`}
                       >
-                        → {nextStatus}
+                        <span>→ Advance to {nextStatus}</span>
                       </button>
                     )}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEdit(p)} className="text-xs text-[#64748b] hover:text-[#0ea5e9] transition-colors px-2 py-1">Edit</button>
-                      <button onClick={() => setDeleteConfirm(p.id)} className="text-xs text-[#64748b] hover:text-red-400 transition-colors px-2 py-1">Delete</button>
-                    </div>
+                    {isResolved && (
+                      <span className="text-xs text-emerald-400 flex items-center gap-1">
+                        <AppIcon name="check" size={12} />
+                        <span>Resolved in system</span>
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      className="px-3 py-1.5 rounded-lg border border-[#334155] text-xs font-semibold text-[#94a3b8] hover:text-white hover:border-[#0ea5e9] transition-colors"
+                    >
+                      Edit Ticket
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm(p.id)}
+                      className="px-3 py-1.5 rounded-lg border border-[#334155] text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500 hover:border-rose-500 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
+
         {sorted.length === 0 && (
-          <div className="text-center py-16 text-[#475569] text-sm">No problems matching current filters</div>
+          <div className="text-center py-16 bg-[#0f172a] border border-[#1e293b] rounded-xl text-sm text-[#64748b]">
+            <AppIcon name="check" size={32} className="mx-auto mb-2 text-emerald-400" />
+            <div className="text-base font-bold text-white mb-1">No problem reports found</div>
+            <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-4">
+              All workstations in this selection are operational with no issues logged.
+            </p>
+            {(filterStatus !== "All" || filterComputer !== "All" || searchQuery) && (
+              <button
+                type="button"
+                onClick={() => { setFilterStatus("All"); setFilterComputer("All"); setSearchQuery(""); }}
+                className="btn-secondary"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
         )}
       </div>
 
+      {/* Add / Edit Problem Modal */}
       {showModal && role === "admin" && (
-        <Modal title={editing ? `Edit ${editing.id}` : "Add Problem Record"} onClose={() => setShowModal(false)}>
+        <Modal
+          title={editing ? `Edit Ticket ${editing.id}` : "Log Problem Incident"}
+          subtitle="Document issue details, hardware malfunction, and reporter"
+          maxWidth="max-w-xl"
+          onClose={() => setShowModal(false)}
+        >
           <div className="space-y-4">
             {formError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
                 {formError}
               </div>
             )}
+
             <div>
-              <label className={lbl}>Computer *</label>
+              <label className={lbl}>Affected Workstation *</label>
               {data.computers.length === 0 ? (
-                <div className="text-xs text-red-400 p-2 bg-red-500/10 rounded">No computers registered yet. Please add a computer first.</div>
+                <div className="text-xs text-rose-400 p-2.5 bg-rose-500/10 rounded-xl">
+                  No computers registered in inventory.
+                </div>
               ) : (
-                <select className={f} value={form.computerId} onChange={e => setForm({ ...form, computerId: e.target.value })}>
-                  {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} — {c.location}</option>)}
+                <select
+                  className={f}
+                  value={form.computerId}
+                  onChange={e => setForm({ ...form, computerId: e.target.value })}
+                >
+                  {data.computers.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.id} — {c.location}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
+
             <div>
-              <label className={lbl}>Description</label>
-              <textarea className={`${f} resize-none h-24`} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe the problem…" />
+              <label className={lbl}>Problem / Incident Description *</label>
+              <textarea
+                className={`${f} resize-none h-24`}
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="Describe the symptoms, error messages, and observed behavior in detail…"
+              />
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={lbl}>Reported By</label>
-                <input className={f} value={form.reportedBy} onChange={e => setForm({ ...form, reportedBy: e.target.value })} placeholder="Full name" />
+                <label className={lbl}>Reported By *</label>
+                <input
+                  className={f}
+                  value={form.reportedBy}
+                  onChange={e => setForm({ ...form, reportedBy: e.target.value })}
+                  placeholder="e.g. Maria Santos / Engr. Lim"
+                />
               </div>
               <div>
                 <label className={lbl}>Status</label>
-                <select className={f} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as ProblemStatus })}>
-                  {ALL_STATUSES.map(s => <option key={s}>{s}</option>)}
+                <select
+                  className={f}
+                  value={form.status}
+                  onChange={e => setForm({ ...form, status: e.target.value as ProblemStatus })}
+                >
+                  {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>
-            <div className="flex gap-3 pt-1">
+
+            <div className="flex gap-3 pt-3 border-t border-[#1e293b]">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="flex-1 py-2 bg-[#0ea5e9] text-[#0f172a] text-sm font-semibold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
+                className="flex-1 py-2.5 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-bold rounded-xl hover:from-rose-700 hover:to-rose-600 disabled:opacity-50 transition-all shadow-md shadow-rose-600/25"
               >
-                {isSubmitting ? "Saving to Database..." : editing ? "Save Changes" : "Add Problem"}
+                {isSubmitting ? "Saving Ticket..." : editing ? "Save Changes" : "Create Problem Ticket"}
               </button>
-              <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">Cancel</button>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-5 py-2.5 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </Modal>
       )}
+
+      {/* Delete Ticket Confirmation */}
       {deleteConfirm && (
-        <Modal title="Delete Problem" onClose={() => setDeleteConfirm(null)}>
-          <p className="text-sm text-[#94a3b8]">
-            Delete <span className="font-mono text-white">{deleteConfirm}</span>? This action cannot be undone.
-          </p>
-          <div className="flex gap-3 mt-6">
-            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-400 transition-colors">
-              Delete
-            </button>
-            <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-sm rounded-lg hover:text-white transition-colors">
-              Cancel
-            </button>
+        <Modal title="Delete Incident Ticket" onClose={() => setDeleteConfirm(null)}>
+          <div className="space-y-4">
+            <p className="text-sm text-[#94a3b8] leading-relaxed">
+              Are you sure you want to permanently delete problem record{" "}
+              <span className="font-mono text-white font-bold">{deleteConfirm}</span>?
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/25"
+              >
+                Delete Ticket
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </Modal>
       )}

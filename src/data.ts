@@ -79,8 +79,62 @@ export const MAINTENANCE_TYPES = [
   "Other",
 ];
 
+export interface CampusLocation {
+  id: string;
+  label: string;
+  fullName: string;
+  icon: string;
+}
+
+export const CAMPUS_LOCATIONS: CampusLocation[] = [
+  { id: "ComLab", label: "ComLab", fullName: "College Computer Laboratory", icon: "comlab" },
+  { id: "SHS Lab", label: "SHS Lab", fullName: "Senior High School Lab", icon: "shs" },
+  { id: "Registrar", label: "Registrar", fullName: "Registrar's Office", icon: "registrar" },
+  { id: "Laboratory", label: "Laboratory", fullName: "Science & Technology Laboratory", icon: "laboratory" },
+];
+
 export const initialData: AppData = {
   computers: [
+    {
+      id: "PC-COMLAB-01", name: "PC-COMLAB-01", location: "ComLab — Row 1, Seat 1",
+      cpu: "Intel Core i7-13700", ram: "32 GB DDR5", storage: "1 TB NVMe SSD", gpu: "NVIDIA RTX 3060 12GB",
+      os: "Windows 11 Pro", status: "Active", dateAcquired: "2024-09-01",
+    },
+    {
+      id: "PC-COMLAB-02", name: "PC-COMLAB-02", location: "ComLab — Row 1, Seat 2",
+      cpu: "Intel Core i7-13700", ram: "32 GB DDR5", storage: "1 TB NVMe SSD", gpu: "NVIDIA RTX 3060 12GB",
+      os: "Windows 11 Pro", status: "Needs Maintenance", dateAcquired: "2024-09-01",
+    },
+    {
+      id: "PC-SHS-01", name: "PC-SHS-01", location: "SHS Lab — Station 1",
+      cpu: "Intel Core i5-12400", ram: "16 GB DDR4", storage: "512 GB SSD", gpu: "Intel UHD 730",
+      os: "Windows 11 Pro", status: "Active", dateAcquired: "2024-06-15",
+    },
+    {
+      id: "PC-SHS-02", name: "PC-SHS-02", location: "SHS Lab — Station 2",
+      cpu: "AMD Ryzen 5 5600G", ram: "16 GB DDR4", storage: "512 GB SSD", gpu: "AMD Radeon Graphics",
+      os: "Windows 11 Pro", status: "Under Repair", dateAcquired: "2024-07-20",
+    },
+    {
+      id: "PC-REG-01", name: "PC-REG-01", location: "Registrar — Enrollment Counter 1",
+      cpu: "Intel Core i5-11400", ram: "16 GB DDR4", storage: "512 GB SSD", gpu: "Intel UHD 730",
+      os: "Windows 11 Pro", status: "Active", dateAcquired: "2023-11-10",
+    },
+    {
+      id: "PC-REG-02", name: "PC-REG-02", location: "Registrar — Student Records Desk",
+      cpu: "Intel Core i5-11400", ram: "16 GB DDR4", storage: "1 TB HDD + 256 GB SSD", gpu: "Intel UHD 730",
+      os: "Windows 10 Pro", status: "Active", dateAcquired: "2023-11-10",
+    },
+    {
+      id: "PC-LAB-01", name: "PC-LAB-01", location: "Laboratory — Research Bench 1",
+      cpu: "Intel Core i7-11700", ram: "16 GB DDR4", storage: "512 GB SSD", gpu: "Intel UHD 750",
+      os: "Windows 11 Pro", status: "Active", dateAcquired: "2023-08-14",
+    },
+    {
+      id: "PC-LAB-02", name: "PC-LAB-02", location: "Laboratory — Digital Microscope Station",
+      cpu: "Intel Core i5-10400", ram: "8 GB DDR4", storage: "256 GB SSD", gpu: "Intel UHD 630",
+      os: "Ubuntu 22.04 LTS", status: "Active", dateAcquired: "2023-08-14",
+    },
     {
       id: "PC-LAB-A-01", name: "PC-LAB-A-01", location: "Lab A — Row 1, Seat 1",
       cpu: "Intel Core i5-12400", ram: "16 GB DDR4", storage: "512 GB SSD", gpu: "Intel UHD 730",

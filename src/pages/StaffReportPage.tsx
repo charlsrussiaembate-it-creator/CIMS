@@ -2,6 +2,7 @@ import { useState } from "react";
 import { generateId, nowTimestamp, todayDate } from "../data";
 import type { AppData } from "../data";
 import type { StaffPage, UserRole } from "../App";
+import { AppIcon } from "../components/Icons";
 import { api } from "../api";
 
 interface Props {
@@ -74,8 +75,8 @@ export default function StaffReportPage({ data, setData, setPage, addLog }: Prop
     return (
       <div className="p-8 max-w-2xl mx-auto">
         <div className="text-center py-12">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-5 text-3xl">
-            ✓
+          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-5 text-emerald-400">
+            <AppIcon name="check" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Problem Reported</h1>
           <p className="text-[#64748b] text-sm mb-1">Your report has been submitted successfully.</p>
@@ -224,7 +225,7 @@ export default function StaffReportPage({ data, setData, setPage, addLog }: Prop
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full py-3 bg-[#0ea5e9] text-[#0f172a] text-sm font-bold rounded-lg hover:bg-[#38bdf8] disabled:opacity-50 transition-colors"
+            className="btn-primary w-full py-2.5 text-xs font-bold"
           >
             {isSubmitting ? "Submitting Report to Database..." : "Submit Problem Report →"}
           </button>

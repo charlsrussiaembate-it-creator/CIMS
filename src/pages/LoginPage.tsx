@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "../api";
+import { AppIcon } from "../components/Icons";
 
 interface LoginPageProps {
   onLogin: (role: "admin" | "staff") => void;
@@ -143,8 +144,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               {/* Satellite Box 1 */}
               <div className="floating-satellite-1">
                 <div className="floating-mini-box bg-white/95 shadow-[0_10px_25px_rgba(0,0,0,0.05)] p-3 rounded-2xl flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#0071e3]/10 flex items-center justify-center text-[#0071e3] text-xs font-bold">
-                    🖥
+                  <div className="w-7 h-7 rounded-lg bg-[#0071e3]/10 flex items-center justify-center text-[#0071e3]">
+                    <AppIcon name="computer" size={14} />
                   </div>
                   <div className="text-left pr-1">
                     <div className="text-[11px] font-semibold text-[#1d1d1f]">Inventory</div>
@@ -156,8 +157,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               {/* Satellite Box 2 */}
               <div className="floating-satellite-2">
                 <div className="floating-mini-box bg-white/95 shadow-[0_10px_25px_rgba(0,0,0,0.05)] p-3 rounded-2xl flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-xs font-bold">
-                    ✓
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                    <AppIcon name="check" size={14} />
                   </div>
                   <div className="text-left pr-1">
                     <div className="text-[11px] font-semibold text-[#1d1d1f]">Maintenance</div>
@@ -168,15 +169,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
               {/* Satellite Box 3 */}
               <div className="floating-satellite-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/85 shadow-sm flex items-center justify-center text-sm">
-                  ⚡
+                <div className="w-10 h-10 rounded-2xl bg-white/85 shadow-sm flex items-center justify-center text-amber-500">
+                  <AppIcon name="bolt" size={16} />
                 </div>
               </div>
 
               {/* Satellite Box 4 */}
               <div className="floating-satellite-4">
-                <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 flex items-center justify-center text-xs text-[#0071e3]">
-                  🔧
+                <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 flex items-center justify-center text-[#0071e3]">
+                  <AppIcon name="tool" size={14} />
                 </div>
               </div>
 
