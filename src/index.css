@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap');
 @import 'tailwindcss';
 
 @theme inline {
@@ -20,6 +20,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono: 'Fira Code', 'Courier New', monospace;
 }
 
@@ -28,17 +29,33 @@
   --foreground: #f1f5f9;
   --card: #1e293b;
   --card-foreground: #f1f5f9;
-  --primary: #0ea5e9;
-  --primary-foreground: #0f172a;
+  --primary: #28166F;
+  --primary-foreground: #ffffff;
   --secondary: #1e3a5f;
   --secondary-foreground: #bae6fd;
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
-  --accent: #06b6d4;
-  --accent-foreground: #0f172a;
+  --accent: #3b209e;
+  --accent-foreground: #ffffff;
   --border: #334155;
-  --ring: #0ea5e9;
+  --ring: #28166F;
   --radius: 0.5rem;
+}
+
+.theme-light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #28166F;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --ring: #28166F;
+  color-scheme: light;
 }
 
 * {
@@ -53,6 +70,15 @@ body,
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--background);
   color: var(--foreground);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.font-serif {
+  font-family: 'Lora', Georgia, Cambria, 'Times New Roman', Times, serif !important;
+}
+
+.font-sans {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 ::-webkit-scrollbar {
@@ -70,6 +96,13 @@ body,
   background: #475569;
 }
 
+.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .font-mono {
   font-family: 'Fira Code', 'Courier New', monospace;
 }
@@ -84,6 +117,321 @@ textarea:focus {
 .cims-app {
   background-color: #0b1329;
   color: #f1f5f9;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* =====================================================
+   WHITE (LIGHT) THEME COMPREHENSIVE LUXURY DESIGN ENGINE
+===================================================== */
+.theme-light html,
+.theme-light body,
+.theme-light #root,
+.theme-light .cims-app {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.theme-light main {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Surfaces & Cards */
+.theme-light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* All Dark Hex Backgrounds to Clean White or Light-Slate */
+.theme-light .bg-\[\#080e20\],
+.theme-light .bg-\[\#0a0f1d\],
+.theme-light .bg-\[\#0b1329\],
+.theme-light .bg-\[\#0b1425\],
+.theme-light .bg-\[\#0b1425\]\/90,
+.theme-light .bg-\[\#0f172a\],
+.theme-light .bg-\[\#1e293b\],
+.theme-light .bg-\[\#1e293b\]\/80,
+.theme-light .bg-\[\#334155\],
+.theme-light .bg-slate-950,
+.theme-light .bg-slate-900,
+.theme-light .bg-slate-900\/80,
+.theme-light .bg-slate-900\/90,
+.theme-light .bg-slate-800,
+.theme-light .bg-slate-800\/60,
+.theme-light .bg-slate-800\/80,
+.theme-light .bg-slate-800\/90,
+.theme-light .bg-slate-700 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Secondary / Sub-panel containers (nested cards, tables, stripes) */
+.theme-light .bg-\[\#080e20\]\/50,
+.theme-light .bg-\[\#131d33\] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light .bg-\[\#131f38\],
+.theme-light .bg-\[\#0c3a55\] {
+  background-color: #e0f2fe !important;
+  color: #0284c7 !important;
+  border-color: #bae6fd !important;
+}
+
+/* Form Inputs, Selects, and Textareas */
+.theme-light input,
+.theme-light select,
+.theme-light textarea,
+.theme-light .theme-light-input {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+}
+
+.theme-light input:focus,
+.theme-light select:focus,
+.theme-light textarea:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.theme-light option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* All Dark Borders to Clean Subtle Light Slate */
+.theme-light .border-\[\#1e293b\],
+.theme-light .border-\[\#334155\],
+.theme-light .border-\[\#475569\],
+.theme-light .border-\[\#1e293b\]\/80,
+.theme-light .border-slate-800,
+.theme-light .border-slate-700,
+.theme-light .border-slate-700\/80,
+.theme-light .border-slate-600 {
+  border-color: #e2e8f0 !important;
+}
+
+/* High-Contrast Crisp Typography */
+.theme-light .text-white,
+.theme-light h1,
+.theme-light h2,
+.theme-light h3,
+.theme-light h4 {
+  color: #0f172a !important;
+}
+
+.theme-light .text-slate-100,
+.theme-light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.theme-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.theme-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+.theme-light .text-slate-500 {
+  color: #64748b !important;
+}
+
+.theme-light .text-\[\#94a3b8\] {
+  color: #475569 !important;
+}
+
+.theme-light .text-\[\#64748b\] {
+  color: #64748b !important;
+}
+
+.theme-light .text-\[\#38bdf8\] {
+  color: #0284c7 !important;
+}
+
+/* Status Badges & Accents Contrast Calibration */
+.theme-light .text-emerald-400,
+.theme-light .text-emerald-300 {
+  color: #047857 !important;
+}
+
+.theme-light .text-amber-400,
+.theme-light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+.theme-light .text-rose-400,
+.theme-light .text-rose-300 {
+  color: #be123c !important;
+}
+
+.theme-light .text-sky-400,
+.theme-light .text-sky-300 {
+  color: #0369a1 !important;
+}
+
+.theme-light .text-purple-400,
+.theme-light .text-purple-300 {
+  color: #7e22ce !important;
+}
+
+.theme-light .text-orange-400,
+.theme-light .text-orange-300 {
+  color: #c2410c !important;
+}
+
+.theme-light .bg-emerald-500\/10,
+.theme-light .bg-emerald-500\/15,
+.theme-light .bg-emerald-500\/20 {
+  background-color: #d1fae5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.theme-light .bg-amber-500\/10,
+.theme-light .bg-amber-500\/15,
+.theme-light .bg-amber-500\/20 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+.theme-light .bg-rose-500\/10,
+.theme-light .bg-rose-500\/15,
+.theme-light .bg-rose-500\/20 {
+  background-color: #ffe4e6 !important;
+  color: #be123c !important;
+  border-color: #fecdd3 !important;
+}
+
+.theme-light .bg-sky-500\/10,
+.theme-light .bg-sky-500\/15,
+.theme-light .bg-sky-500\/20 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+}
+
+.theme-light .bg-purple-500\/10,
+.theme-light .bg-purple-500\/15,
+.theme-light .bg-purple-500\/20 {
+  background-color: #f3e8ff !important;
+  color: #7e22ce !important;
+  border-color: #e9d5ff !important;
+}
+
+.theme-light .bg-orange-500\/10,
+.theme-light .bg-orange-500\/15,
+.theme-light .bg-orange-500\/20 {
+  background-color: #ffedd5 !important;
+  color: #c2410c !important;
+  border-color: #fed7aa !important;
+}
+
+/* Tables in Light Mode */
+.theme-light table {
+  background-color: #ffffff !important;
+}
+
+.theme-light thead,
+.theme-light thead tr,
+.theme-light thead th,
+.theme-light thead.bg-\[\#0b1329\] {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.theme-light tbody tr {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+.theme-light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.theme-light tbody td {
+  border-color: #f1f5f9 !important;
+}
+
+/* Modals & Dialogs in Light Mode */
+.theme-light .modal-dialog-enter {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.theme-light .modal-dialog-enter > div:first-child {
+  background-color: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+.theme-light .modal-dialog-enter h2 {
+  color: #0f172a !important;
+}
+
+/* Interactive Buttons in Light Mode */
+.theme-light .btn-primary {
+  background-color: #28166F !important;
+  color: #ffffff !important;
+  border-color: #28166F !important;
+  box-shadow: 0 2px 4px 0 rgba(40, 22, 111, 0.2) !important;
+}
+
+.theme-light .btn-primary:hover {
+  background-color: #352085 !important;
+}
+
+.theme-light .btn-secondary {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.theme-light .btn-secondary:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* Hover States in Light Mode */
+.theme-light .hover\:bg-\[\#131d33\]:hover,
+.theme-light .hover\:bg-\[\#1e293b\]:hover,
+.theme-light .hover\:bg-\[\#0f172a\]:hover,
+.theme-light .hover\:bg-slate-800:hover,
+.theme-light .hover\:bg-slate-800\/60:hover,
+.theme-light .hover\:bg-slate-800\/80:hover,
+.theme-light .hover\:bg-slate-800\/90:hover,
+.theme-light .hover\:bg-slate-700:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+.theme-light .hover\:border-\[\#334155\]:hover,
+.theme-light .hover\:border-\[\#475569\]:hover,
+.theme-light .hover\:border-slate-600:hover,
+.theme-light .hover\:border-slate-500:hover {
+  border-color: #cbd5e1 !important;
 }
 
 /* =====================================================
@@ -167,7 +515,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid #28166F;
   outline-offset: 1px;
 }
 
@@ -177,17 +525,18 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: #0ea5e9;
-  color: #0b1329;
+  background-color: #28166F;
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.5rem 0.875rem;
   border-radius: 0.5rem;
-  border: 1px solid transparent;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #3d249e;
+  box-shadow: 0 2px 4px 0 rgba(40, 22, 111, 0.35);
+  cursor: pointer;
 }
 .btn-primary:hover {
-  background-color: #38bdf8;
+  background-color: #352085;
 }
 .btn-primary:disabled {
   opacity: 0.5;

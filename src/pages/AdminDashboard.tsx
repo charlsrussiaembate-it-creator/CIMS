@@ -40,17 +40,17 @@ function StatCard({
           <AppIcon name={icon} size={18} />
         </div>
         {badge && (
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border font-sans ${badgeColor}`}>
             {badge}
           </span>
         )}
       </div>
 
-      <div className="text-2xl font-black text-white tracking-tight">{value}</div>
-      <div className="text-xs font-bold text-slate-200 mt-1">{label}</div>
-      <div className="text-[11px] font-semibold text-slate-400 mt-0.5">{sub}</div>
+      <div className="text-3xl font-serif font-bold text-white tracking-tight">{value}</div>
+      <div className="text-xs font-bold text-slate-200 mt-1 font-sans">{label}</div>
+      <div className="text-[11px] font-semibold text-slate-400 mt-0.5 font-sans">{sub}</div>
 
-      <div className="mt-3 pt-3 border-t border-[#1e293b] flex items-center justify-between text-[11px] text-sky-400 font-bold">
+      <div className="mt-3 pt-3 border-t border-[#1e293b] flex items-center justify-between text-[11px] text-sky-400 font-bold font-sans">
         <span>View Details</span>
         <span className="group-hover:translate-x-0.5 transition-transform">→</span>
       </div>
@@ -100,19 +100,11 @@ export default function AdminDashboard({ data, setPage }: Props) {
   const decommissionedPercent = Math.round((decommissioned / totalComps) * 100);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans">
       {/* Top Banner & Quick Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[#1e293b]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-black text-white tracking-tight">Admin Overview</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-              Live Fleet Active
-            </span>
-          </div>
-          <p className="text-xs font-bold text-slate-300">
-            St. Rita's College of Balingasag · Computer Laboratories &amp; Asset Command Center
-          </p>
+          <h1 className="text-2xl font-bold font-serif text-white tracking-tight">Admin Overview</h1>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -393,37 +385,43 @@ export default function AdminDashboard({ data, setPage }: Props) {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {recentLogs.map(log => {
-                const isAdmin = log.role === "admin";
-                return (
-                  <div
-                    key={log.id}
-                    className="p-3 rounded-xl bg-[#131d33] border border-[#1e293b] space-y-1 hover:border-[#334155] transition-all"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                            isAdmin
-                              ? "bg-sky-500/15 text-sky-400 border border-sky-500/25"
-                              : "bg-purple-500/15 text-purple-400 border border-purple-500/25"
-                          }`}
-                        >
-                          {log.role}
+            {recentLogs.length === 0 ? (
+              <div className="p-6 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-semibold text-[#64748b]">
+                No audit log events recorded yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentLogs.map(log => {
+                  const isAdmin = log.role === "admin";
+                  return (
+                    <div
+                      key={log.id}
+                      className="p-3 rounded-xl bg-[#131d33] border border-[#1e293b] space-y-1 hover:border-[#334155] transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                              isAdmin
+                                ? "bg-sky-500/15 text-sky-400 border border-sky-500/25"
+                                : "bg-purple-500/15 text-purple-400 border border-purple-500/25"
+                            }`}
+                          >
+                            {log.role}
+                          </span>
+                          <span className="text-xs font-bold text-white">{log.action}</span>
+                        </div>
+                        <span className="font-mono font-bold text-[9px] text-[#64748b]">
+                          {log.timestamp.split(" ")[1] || log.timestamp}
                         </span>
-                        <span className="text-xs font-bold text-white">{log.action}</span>
                       </div>
-                      <span className="font-mono font-bold text-[9px] text-[#64748b]">
-                        {log.timestamp.split(" ")[1] || log.timestamp}
-                      </span>
+                      <p className="text-[11px] font-semibold text-slate-300 line-clamp-1">{log.details}</p>
+                      <div className="text-[10px] font-semibold text-slate-400">by <span className="font-bold text-slate-300">{log.actor}</span></div>
                     </div>
-                    <p className="text-[11px] font-semibold text-slate-300 line-clamp-1">{log.details}</p>
-                    <div className="text-[10px] font-semibold text-slate-400">by <span className="font-bold text-slate-300">{log.actor}</span></div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Lab Allocation Quick Breakdown */}
@@ -431,22 +429,28 @@ export default function AdminDashboard({ data, setPage }: Props) {
             <h2 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-3">
               Workstation Distribution
             </h2>
-            <div className="space-y-2.5">
-              {Object.entries(labCounts).map(([lab, count]) => (
-                <div key={lab} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-bold">{lab}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 rounded-full bg-[#1e293b] overflow-hidden">
-                      <div
-                        className="h-full bg-[#0ea5e9] rounded-full"
-                        style={{ width: `${(count / totalComps) * 100}%` }}
-                      />
+            {Object.entries(labCounts).length === 0 ? (
+              <div className="p-4 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-semibold text-[#64748b]">
+                No workstations registered yet.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {Object.entries(labCounts).map(([lab, count]) => (
+                  <div key={lab} className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-bold">{lab}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-[#1e293b] overflow-hidden">
+                        <div
+                          className="h-full bg-[#0ea5e9] rounded-full"
+                          style={{ width: `${(count / totalComps) * 100}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-white font-black w-6 text-right">{count}</span>
                     </div>
-                    <span className="font-mono text-white font-black w-6 text-right">{count}</span>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -23,21 +23,21 @@ function ActionTile({ icon, title, description, action, onClick, badge, badgeCol
   return (
     <button
       onClick={onClick}
-      className="text-left p-6 rounded-xl border bg-[#1e293b] border-[#334155] transition-all group hover:scale-[1.01] hover:border-[#475569] active:scale-[0.99]"
+      className="text-left p-6 rounded-xl border bg-[#1e293b] border-[#334155] transition-all group hover:scale-[1.01] hover:border-[#475569] active:scale-[0.99] cursor-pointer"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="w-12 h-12 rounded-xl bg-[#0f172a] border border-[#334155] flex items-center justify-center">
           {icon}
         </div>
         {badge && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor || "bg-white/20 text-white"}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-sans ${badgeColor || "bg-white/20 text-white"}`}>
             {badge}
           </span>
         )}
       </div>
-      <div className="text-base font-bold mb-1 text-white">{title}</div>
-      <div className="text-sm font-semibold mb-4 text-slate-300">{description}</div>
-      <div className="text-xs font-bold flex items-center gap-1 transition-gap group-hover:gap-2 text-[#0ea5e9]">
+      <div className="text-base font-bold mb-1 text-white font-sans">{title}</div>
+      <div className="text-sm font-semibold mb-4 text-slate-300 font-sans">{description}</div>
+      <div className="text-xs font-bold flex items-center gap-1 transition-gap group-hover:gap-2 text-[#0ea5e9] font-sans">
         {action} <span>→</span>
       </div>
     </button>
@@ -57,14 +57,13 @@ export default function StaffDashboard({ data, setPage }: Props) {
     .slice(0, 3);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-5xl mx-auto font-sans">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <span className="text-xs font-mono font-bold text-[#0ea5e9] bg-[#0ea5e9]/10 px-2 py-0.5 rounded">Staff Portal</span>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
+        <div>
+          <h1 className="text-2xl font-bold font-serif text-white tracking-tight">Welcome to CIMS</h1>
+          <p className="text-sm font-semibold text-slate-400 mt-1">Computer Inventory &amp; Maintenance System · Staff Workspace</p>
         </div>
-        <h1 className="text-2xl font-black text-white">Welcome to CIMS</h1>
-        <p className="text-sm font-bold text-slate-400 mt-1">St. Rita's College of Balingasag — Computer Inventory &amp; Maintenance System</p>
       </div>
 
       {/* Quick stats banner */}

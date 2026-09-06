@@ -82,17 +82,19 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       {/* =====================================================
           1. CLEAN STICKY HEADER (76px height, normal document flow)
       ===================================================== */}
-      <header className="sticky top-0 z-30 w-full h-[76px] px-6 sm:px-12 lg:px-16 bg-[#f5f5f7]/95 backdrop-blur-md flex items-center justify-between">
+      <header className="sticky top-0 z-30 w-full h-[76px] px-6 sm:px-12 lg:px-16 bg-[#f5f5f7]/95 backdrop-blur-md flex items-center justify-between border-b border-slate-200/80">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1d1d1f] text-sm font-semibold text-white shadow-sm">
-            CI
-          </div>
+          <img
+            src="/logo.png"
+            alt="St. Rita's College Logo"
+            className="w-11 h-11 object-contain drop-shadow-sm"
+          />
           <div>
-            <span className="text-base font-bold tracking-tight text-[#1d1d1f]">
+            <span className="text-base font-serif font-bold tracking-tight text-[#1d1d1f]">
               CIMS
             </span>
-            <span className="block text-[11px] text-[#86868b] -mt-0.5">
-              St. Rita's College
+            <span className="block text-[11px] font-semibold text-[#28166F] -mt-0.5 font-sans">
+              St. Rita's College of Balingasag
             </span>
           </div>
         </div>
@@ -112,14 +114,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               className="motion-float absolute -left-36 -top-36 h-[600px] w-[600px] rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(0, 113, 227, 0.08), transparent 70%)",
+                  "radial-gradient(circle, rgba(40, 22, 111, 0.1), transparent 70%)",
               }}
             />
             <div
               className="motion-float-reverse absolute -bottom-44 right-0 h-[650px] w-[650px] rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(14, 165, 233, 0.07), transparent 70%)",
+                  "radial-gradient(circle, rgba(53, 32, 133, 0.08), transparent 70%)",
               }}
             />
           </div>
@@ -129,13 +131,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <div className="floating-scene relative h-[320px] w-[320px] sm:h-[380px] sm:w-[380px] lg:h-[400px] lg:w-[400px] flex items-center justify-center">
               <div className="floating-shadow" />
 
-              {/* Main Hero Floating Box */}
+              {/* Main Hero Floating Box with St. Rita's Logo */}
               <div className="floating-box-main">
                 <div className="floating-box-inner">
-                  <div className="floating-box-glass">
-                    <div className="floating-box-logo">
-                      <span>CI</span>
-                    </div>
+                  <div className="floating-box-glass flex items-center justify-center p-3">
+                    <img
+                      src="/logo.png"
+                      alt="St. Rita's College of Balingasag Seal"
+                      className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-lg"
+                    />
                     <div className="floating-box-shine" />
                   </div>
                 </div>
@@ -208,26 +212,22 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <section className="lg:w-[42%] lg:sticky lg:top-[76px] lg:self-start lg:h-[calc(100vh-76px)] bg-[#f0f2f5]/50 lg:bg-[#f0f2f5]/60 flex flex-col justify-between p-6 sm:p-10 lg:p-12 pb-10 sm:pb-12 relative overflow-y-auto">
           {/* Form container: Starts in the upper-middle area with ~15-20% top breathing room */}
           <div className="w-full max-w-[420px] mx-auto pt-4 sm:pt-8 lg:pt-10">
-            {/* Header */}
+            {/* Login Header */}
             <div className="mb-7">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#86868b]">
-                SECURE ACCESS
-              </p>
-
-              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-[#1d1d1f]">
+              <h2 className="text-3xl font-bold font-serif tracking-[-0.035em] text-[#1d1d1f]">
                 Welcome back.
               </h2>
 
-              <p className="mt-2 text-sm text-[#6e6e73]">
+              <p className="mt-1.5 text-sm font-medium text-[#6e6e73] font-sans">
                 Sign in to manage your laboratory workspace.
               </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 font-sans">
               {/* Email Address */}
               <label className="block">
-                <span className="mb-2 block text-[13px] font-medium text-[#6e6e73]">
+                <span className="mb-2 block text-[13px] font-semibold text-[#1e1b4b]">
                   Email address
                 </span>
 
@@ -238,7 +238,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     setEmail(event.target.value);
                     setError("");
                   }}
-                  placeholder="admin@demo.com"
+                  placeholder="admin@school.edu or staff@school.edu"
                   autoComplete="email"
                   autoFocus
                   className="
@@ -254,16 +254,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     outline-none
                     transition-all
                     placeholder:text-[#86868b]
-                    focus:border-[#0071e3]
+                    focus:border-[#28166F]
                     focus:ring-4
-                    focus:ring-[#0071e3]/10
+                    focus:ring-[#28166F]/15
                   "
                 />
               </label>
 
               {/* Password */}
               <label className="block">
-                <span className="mb-2 block text-[13px] font-medium text-[#6e6e73]">
+                <span className="mb-2 block text-[13px] font-semibold text-[#1e1b4b]">
                   Password
                 </span>
 
@@ -292,9 +292,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       outline-none
                       transition-all
                       placeholder:text-[#86868b]
-                      focus:border-[#0071e3]
+                      focus:border-[#28166F]
                       focus:ring-4
-                      focus:ring-[#0071e3]/10
+                      focus:ring-[#28166F]/15
                     "
                   />
 
@@ -306,10 +306,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       inset-y-0
                       right-4
                       text-[13px]
-                      font-medium
-                      text-[#0071e3]
+                      font-bold
+                      text-[#28166F]
                       transition-opacity
                       hover:opacity-70
+                      cursor-pointer
                     "
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -320,12 +321,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
               {/* Remember me + Forgot password */}
               <div className="flex items-center justify-between gap-4 pt-1">
-                <label className="flex items-center gap-2 text-[13px] text-[#6e6e73] cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-[13px] font-medium text-[#6e6e73] cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(event) => setRememberMe(event.target.checked)}
-                    className="h-4 w-4 rounded accent-[#0071e3]"
+                    className="h-4 w-4 rounded accent-[#28166F]"
                   />
                   Remember me
                 </label>
@@ -333,7 +334,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-[13px] font-medium text-[#0071e3] transition-opacity hover:opacity-70"
+                  className="text-[13px] font-bold text-[#28166F] transition-opacity hover:opacity-70 cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -363,45 +364,46 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   className="
                     rounded-xl
                     border
-                    border-[#0071e3]/20
-                    bg-[#0071e3]/10
+                    border-[#28166F]/20
+                    bg-[#28166F]/10
                     p-3.5
                     text-[13px]
                     leading-5
-                    text-[#0071e3]
+                    text-[#28166F] font-medium
                   "
                 >
                   {notice}
                 </div>
               )}
 
-              {/* Sign In Button */}
+              {/* Sign In Button with St. Rita's #28166F Logo Color */}
               <button
                 type="submit"
                 disabled={isLoading}
                 className="
                   w-full
                   rounded-xl
-                  bg-[#0071e3]
+                  bg-[#28166F]
                   py-3.5
                   text-[15px]
-                  font-semibold
+                  font-bold
                   text-white
-                  shadow-md
-                  shadow-[#0071e3]/15
+                  shadow-lg
+                  shadow-[#28166F]/25
                   transition-all
-                  hover:bg-[#0077ed]
+                  hover:bg-[#352085]
                   active:scale-[0.99]
                   disabled:opacity-50
                   disabled:cursor-not-allowed
                   focus:outline-none
                   focus:ring-4
-                  focus:ring-[#0071e3]/20
+                  focus:ring-[#28166F]/25
                   flex
                   items-center
                   justify-center
                   gap-2
                   mt-3
+                  cursor-pointer
                 "
               >
                 {isLoading ? (
@@ -410,17 +412,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
-                    <span>Connecting to Database...</span>
+                    <span>Authenticating Credentials...</span>
                   </>
                 ) : (
-                  "Sign in"
+                  "Sign in to CIMS"
                 )}
               </button>
             </form>
 
             {/* Footer note directly under form */}
-            <p className="mt-6 text-center text-[11px] text-[#86868b]">
-              Computer Inventory & Maintenance System · St. Rita's College
+            <p className="mt-6 text-center text-[11px] font-medium text-[#86868b] font-sans">
+              St. Rita's College of Balingasag · Computer Laboratories Management System
             </p>
           </div>
         </section>

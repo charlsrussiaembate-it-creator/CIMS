@@ -29,6 +29,12 @@ export default function App() {
   const [computerLocationFilter, setComputerLocationFilter] = useState<string>("All");
   const [data, setData] = useState<AppData>(initialData);
 
+  useEffect(() => {
+    localStorage.setItem("cims-theme", "light");
+    document.documentElement.classList.add("theme-light");
+    document.documentElement.classList.remove("theme-dark");
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const fetched = await api.fetchAllData();
@@ -71,9 +77,9 @@ export default function App() {
         <div className="cims-app auth-view-enter flex flex-col h-screen overflow-hidden">
           <Header
             role={role}
+            setRole={setRole}
             adminPage={adminPage}
             staffPage={staffPage}
-            data={data}
             computerLocationFilter={computerLocationFilter}
             setComputerLocationFilter={setComputerLocationFilter}
             onLogout={() => setIsAuthenticated(false)}
@@ -81,7 +87,6 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden">
             <Sidebar
               role={role}
-              onLogout={() => setIsAuthenticated(false)}
               adminPage={adminPage}
               setAdminPage={setAdminPage}
               staffPage={staffPage}
@@ -90,11 +95,16 @@ export default function App() {
               computerLocationFilter={computerLocationFilter}
               setComputerLocationFilter={setComputerLocationFilter}
             />
-            <main className="flex-1 overflow-y-auto bg-[#0b1329]">
+            <main className="flex-1 overflow-y-auto bg-[#f8fafc] text-slate-900">
               <div key={role === "admin" ? adminPage : staffPage} className="page-enter">
                 {role === "admin" ? (
                   <>
-                    {adminPage === "dashboard" && <AdminDashboard data={data} setPage={setAdminPage} />}
+                    {adminPage === "dashboard" && (
+                      <AdminDashboard
+                        data={data}
+                        setPage={setAdminPage}
+                      />
+                    )}
                     {adminPage === "computers" && (
                       <ComputersPage
                         data={data}
@@ -111,7 +121,12 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    {staffPage === "dashboard" && <StaffDashboard data={data} setPage={setStaffPage} />}
+                    {staffPage === "dashboard" && (
+                      <StaffDashboard
+                        data={data}
+                        setPage={setStaffPage}
+                      />
+                    )}
                     {staffPage === "report" && <StaffReportPage data={data} setData={setData} setPage={setStaffPage} addLog={addLog} />}
                     {staffPage === "my-problems" && <ProblemsPage data={data} setData={setData} role="staff" addLog={addLog} />}
                     {staffPage === "computer-status" && <StaffComputerStatusPage data={data} />}
@@ -123,22 +138,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* In-Website Developer Tools Panel & Floating Trigger */}
-      <DevTool
-        isAuthenticated={isAuthenticated}
-        setIsAuthenticated={setIsAuthenticated}
-        role={role}
-        setRole={setRole}
-        adminPage={adminPage}
-        setAdminPage={setAdminPage}
-        staffPage={staffPage}
-        setStaffPage={setStaffPage}
-        data={data}
-        setData={setData}
-        onReloadData={loadData}
-        addLog={addLog}
-      />
     </div>
   );
 }
