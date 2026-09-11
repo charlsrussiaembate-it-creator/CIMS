@@ -1,7 +1,5 @@
 import type { AdminPage, StaffPage, UserRole } from "../App";
 import type { AppData } from "../data";
-import { CAMPUS_LOCATIONS } from "../data";
-import { useState } from "react";
 import { AppIcon } from "./Icons";
 
 interface SidebarProps {
@@ -39,10 +37,8 @@ export default function Sidebar({
   staffPage,
   setStaffPage,
   data,
-  computerLocationFilter = "All",
   setComputerLocationFilter,
 }: SidebarProps) {
-  const [computersExpanded, setComputersExpanded] = useState(true);
   const currentPage = role === "admin" ? adminPage : staffPage;
   const nav = role === "admin" ? adminNav : staffNav;
 
@@ -51,64 +47,31 @@ export default function Sidebar({
 
   function handleNav(id: string) {
     if (role === "admin") {
+      setAdminPage(id as AdminPage);
       if (id === "computers") {
-        if (adminPage === "computers") {
-          setComputersExpanded(prev => !prev);
-        } else {
-          setComputersExpanded(true);
-          setAdminPage("computers");
-          setComputerLocationFilter?.("All");
-        }
-      } else {
-        setAdminPage(id as AdminPage);
+        setComputerLocationFilter?.("All");
       }
     } else {
       setStaffPage(id as StaffPage);
     }
   }
 
-  function handleLocationSubnav(locId: string) {
-    setAdminPage("computers");
-    setComputerLocationFilter?.(locId);
-  }
-
-  // Count computers per campus location
-  const getLocationCount = (locId: string) => {
-    if (!data) return 0;
-    if (locId === "All") return data.computers.length;
-    const l = locId.toLowerCase();
-    return data.computers.filter(c => {
-      const cloc = c.location.toLowerCase();
-      if (l === "comlab") return cloc.includes("comlab");
-      if (l === "shs lab") return cloc.includes("shs");
-      if (l === "registrar") return cloc.includes("registrar") || cloc.includes("reg");
-      if (l === "laboratory") return (cloc.includes("laboratory") || cloc.includes("lab")) && !cloc.includes("comlab") && !cloc.includes("shs");
-      return cloc.includes(l);
-    }).length;
-  };
-
   return (
-    <aside className="w-64 flex-shrink-0 flex flex-col bg-[#0b1329] border-r border-[#1e293b] h-full select-none">
-      {/* Navigation Header for Admin (Removed above Home for Staff) */}
-      {role === "admin" && (
-        <div className="px-4 py-3.5 border-b border-[#1e293b] flex items-center gap-3 bg-[#080e20]/60">
-          <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center flex-shrink-0 shadow-sm border border-[#28166F]/30 overflow-hidden">
-            <img src="/logo.png" alt="St. Rita's Seal" className="w-full h-full object-contain" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-serif font-bold text-white truncate tracking-tight">St. Rita's College</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans truncate">
-              Management Suite
-            </div>
-          </div>
-        </div>
-      )}
+    <aside className="w-64 flex-shrink-0 flex flex-col bg-white border-r border-slate-200 h-full select-none shadow-xs">
+      {/* Category Header */}
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">
+          {role === "admin" ? "Management Suite" : "Staff Portal"}
+        </span>
+        <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-600">
+          {nav.length} Views
+        </span>
+      </div>
 
       {/* Navigation Menu */}
       <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         {nav.map((item) => {
           const isActive = currentPage === item.id;
-          const isComputers = item.id === "computers";
           const isProblems = item.id === "problems" || item.id === "my-problems";
           const isMaintenance = item.id === "maintenance" || item.id === "maintenance-status";
 
@@ -116,16 +79,16 @@ export default function Sidebar({
             <div key={item.id} className="space-y-0.5">
               <button
                 onClick={() => handleNav(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors group ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors group cursor-pointer ${
                   isActive
-                    ? "bg-[#28166F]/35 text-white font-bold border-l-2 border-[#28166F]"
-                    : "text-slate-300 hover:text-white hover:bg-[#0f172a]"
+                    ? "bg-[#28166F]/10 text-[#28166F] font-bold border-l-2 border-[#28166F]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <span
                     className={`transition-transform group-hover:scale-110 ${
-                      isActive ? "text-[#a5b4fc]" : "text-[#64748b] group-hover:text-[#94a3b8]"
+                      isActive ? "text-[#28166F]" : "text-slate-400 group-hover:text-slate-600"
                     }`}
                   >
                     <AppIcon name={item.icon} size={16} />
@@ -136,96 +99,39 @@ export default function Sidebar({
                 <div className="flex items-center gap-1.5">
                   {/* Dynamic Notification Badges */}
                   {isProblems && openProblemsCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200 animate-pulse">
                       {openProblemsCount}
                     </span>
                   )}
                   {isMaintenance && activeMaintenanceCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-[#28166F] border border-indigo-200">
                       {activeMaintenanceCount}
-                    </span>
-                  )}
-                  {isComputers && role === "admin" && (
-                    <span className={`text-xs font-bold transition-transform duration-200 text-slate-500 ${computersExpanded ? "rotate-90 text-sky-400" : ""}`}>
-                      ›
                     </span>
                   )}
                 </div>
               </button>
-
-              {/* Expandable Campus Labs Submenu under Computers */}
-              {isComputers && role === "admin" && computersExpanded && (
-                <div className="pl-5 pr-1 py-1 space-y-0.5 border-l border-[#28166F]/40 ml-4 animate-fadeIn">
-                  {/* All Workstations */}
-                  <button
-                    onClick={() => handleLocationSubnav("All")}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
-                      isActive && computerLocationFilter === "All"
-                        ? "bg-[#28166F]/30 text-white font-bold border border-[#28166F]/50"
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/60 font-bold"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <AppIcon name="computers" size={13} className={isActive && computerLocationFilter === "All" ? "text-indigo-300" : "text-slate-500"} />
-                      <span className="font-bold">All Workstations</span>
-                    </div>
-                    <span className="text-[10px] font-mono font-bold text-slate-400">
-                      {data?.computers.length || 0}
-                    </span>
-                  </button>
-
-                  {/* Campus Lab Locations */}
-                  {CAMPUS_LOCATIONS.map((loc) => {
-                    const count = getLocationCount(loc.id);
-                    const isLocActive = isActive && computerLocationFilter === loc.id;
-
-                    return (
-                      <button
-                        key={loc.id}
-                        onClick={() => handleLocationSubnav(loc.id)}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
-                          isLocActive
-                            ? "bg-[#28166F]/30 text-white font-bold border border-[#28166F]/50"
-                            : "text-slate-300 hover:text-white hover:bg-slate-800/60 font-bold"
-                        }`}
-                        title={loc.fullName}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <AppIcon name={loc.icon} size={13} className={isLocActive ? "text-indigo-300" : "text-slate-500"} />
-                          <span className="truncate font-bold">{loc.label}</span>
-                        </div>
-                        <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
-                          isLocActive ? "bg-[#28166F]/60 text-white" : "bg-slate-800 text-slate-400"
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           );
         })}
       </nav>
 
       {/* User Info Card */}
-      <div className="p-3 border-t border-[#1e293b]/80 bg-[#080e20]">
-        <div className="p-2.5 rounded-xl bg-[#0f172a] border border-[#1e293b] flex items-center justify-between gap-2">
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2 shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-[#28166F] border border-indigo-400/40 flex items-center justify-center text-xs font-black text-white flex-shrink-0">
-              {role === "admin" ? "AD" : "ST"}
+            <div className="w-8 h-8 rounded-full bg-[#28166F] border border-indigo-200 flex items-center justify-center text-white flex-shrink-0 shadow-xs">
+              <AppIcon name="user" size={15} className="text-white" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-extrabold text-white truncate leading-tight tracking-tight">
+              <div className="text-xs font-bold text-slate-900 truncate leading-tight tracking-tight font-sans">
                 {role === "admin" ? "System Admin" : "Lab Staff"}
               </div>
-              <div className="text-[10px] text-slate-400 font-bold truncate leading-tight mt-0.5 font-mono">
+              <div className="text-[10px] text-slate-500 font-medium truncate leading-tight mt-0.5 font-mono">
                 {role === "admin" ? "admin@school.edu" : "staff@school.edu"}
               </div>
             </div>
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] flex-shrink-0" title="Online" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981] flex-shrink-0" title="Online" />
         </div>
       </div>
     </aside>

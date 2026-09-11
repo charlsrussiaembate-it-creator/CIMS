@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import DevTool from "./components/DevTool";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 import ComputersPage from "./pages/ComputersPage";
@@ -13,6 +12,7 @@ import StaffReportPage from "./pages/StaffReportPage";
 import StaffComputerStatusPage from "./pages/StaffComputerStatusPage";
 import StaffMaintenanceStatusPage from "./pages/StaffMaintenanceStatusPage";
 import LoginPage from "./pages/LoginPage";
+import DevTool from "./components/DevTool";
 import { initialData, generateId, nowTimestamp } from "./data";
 import type { AppData, AuditLog } from "./data";
 import { api } from "./api";
@@ -77,7 +77,6 @@ export default function App() {
         <div className="cims-app auth-view-enter flex flex-col h-screen overflow-hidden">
           <Header
             role={role}
-            setRole={setRole}
             adminPage={adminPage}
             staffPage={staffPage}
             computerLocationFilter={computerLocationFilter}
@@ -138,6 +137,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Global Floating DevTool - Accessible on Login Page and in App */}
+      <DevTool
+        isAuthenticated={isAuthenticated}
+        setIsAuthenticated={setIsAuthenticated}
+        role={role}
+        setRole={setRole}
+      />
     </div>
   );
 }

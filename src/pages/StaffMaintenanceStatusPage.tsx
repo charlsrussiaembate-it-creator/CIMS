@@ -17,47 +17,48 @@ export default function StaffMaintenanceStatusPage({ data }: Props) {
     .slice(0, 5);
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <span className="text-xs font-mono text-[#0ea5e9] bg-[#0ea5e9]/10 px-2 py-0.5 rounded">Read Only</span>
-        <h1 className="text-2xl font-bold text-white mt-1">Maintenance Status</h1>
-        <p className="text-sm text-[#64748b] mt-0.5">Current and upcoming maintenance activities.</p>
+    <div className="p-5 sm:p-6 max-w-5xl mx-auto space-y-4 font-sans text-slate-900">
+      <div className="pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[10px] font-bold font-mono text-[#28166F] bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">Staff View</span>
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-tight">Maintenance Schedule</h1>
+        <p className="text-xs text-slate-500 mt-0.5">Current and scheduled maintenance servicing across laboratory workstations.</p>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-3">Upcoming &amp; In Progress</h2>
+      <div className="space-y-2">
+        <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider px-1">Upcoming &amp; In Progress</h2>
         {upcoming.length === 0 ? (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-8 text-center text-xs text-[#475569]">
-            No upcoming maintenance scheduled
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-xs text-slate-500 shadow-xs">
+            No upcoming maintenance scheduled at this time.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {upcoming.map(m => {
               const computer = data.computers.find(c => c.id === m.computerId);
               return (
-                <div key={m.id} className="bg-[#1e293b] border border-[#334155] rounded-xl p-4 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#0f172a] border border-[#334155] flex items-center justify-center flex-shrink-0">
+                <div key={m.id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-start gap-3.5 shadow-xs">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center flex-shrink-0 text-[#28166F]">
                     <AppIcon
-                      name={m.status === "In Progress" ? "tool" : "calendar"}
-                      size={18}
-                      className={m.status === "In Progress" ? "text-amber-400" : "text-sky-400"}
+                      name={m.status === "In Progress" ? "bolt" : "calendar"}
+                      size={16}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-mono text-xs text-[#0ea5e9]">{m.computerId}</span>
+                      <span className="font-mono text-xs font-bold text-[#28166F] bg-indigo-50 px-2 py-0.2 rounded border border-indigo-200">{m.computerId}</span>
                       <StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} />
-                      <span className="text-xs text-[#475569]">{m.maintenanceType}</span>
+                      <span className="text-xs text-slate-500 font-medium">{m.maintenanceType}</span>
                     </div>
-                    <p className="text-sm text-white mb-1">{m.activity}</p>
-                    {computer && <p className="text-xs text-[#64748b]">{computer.location}</p>}
-                    {m.notes && <p className="text-xs text-[#475569] mt-1 italic">{m.notes}</p>}
+                    <p className="text-xs font-bold text-slate-900 mb-0.5">{m.activity}</p>
+                    {computer && <p className="text-xs text-slate-500 font-medium">{computer.location}</p>}
+                    {m.notes && <p className="text-xs text-slate-500 mt-1 italic">"{m.notes}"</p>}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-[10px] text-[#475569]">Scheduled</div>
-                    <div className="text-xs font-mono text-[#64748b]">{m.scheduledDate}</div>
-                    <div className="text-[10px] text-[#475569] mt-1">Technician</div>
-                    <div className="text-xs text-[#64748b]">{m.technician}</div>
+                    <div className="text-[10px] text-slate-500 font-bold uppercase">Scheduled</div>
+                    <div className="text-xs font-mono font-bold text-[#28166F]">{m.scheduledDate}</div>
+                    <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Technician</div>
+                    <div className="text-xs text-slate-800 font-medium">{m.technician}</div>
                   </div>
                 </div>
               );
@@ -66,28 +67,28 @@ export default function StaffMaintenanceStatusPage({ data }: Props) {
         )}
       </div>
 
-      <div>
-        <h2 className="text-xs font-semibold text-[#475569] uppercase tracking-wider mb-3">Recently Completed</h2>
+      <div className="space-y-2">
+        <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider px-1">Recently Completed</h2>
         {completed.length === 0 ? (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-xl p-8 text-center text-xs text-[#475569]">No completed maintenance yet</div>
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-xs text-slate-500 shadow-xs">No completed maintenance yet</div>
         ) : (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#334155]">
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-[#475569] font-semibold">Computer</th>
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-[#475569] font-semibold">Activity</th>
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-[#475569] font-semibold">Completed</th>
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-[#475569] font-semibold">Status</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  <th className="text-left px-5 py-2.5">Workstation</th>
+                  <th className="text-left px-5 py-2.5">Activity</th>
+                  <th className="text-left px-5 py-2.5">Completed Date</th>
+                  <th className="text-left px-5 py-2.5">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e293b]">
+              <tbody className="divide-y divide-slate-100">
                 {completed.map(m => (
-                  <tr key={m.id} className="hover:bg-[#0f172a] transition-colors">
-                    <td className="px-5 py-3.5 font-mono text-xs text-[#0ea5e9]">{m.computerId}</td>
-                    <td className="px-5 py-3.5 text-xs text-[#94a3b8] max-w-48 truncate">{m.activity}</td>
-                    <td className="px-5 py-3.5 text-xs font-mono text-[#475569]">{m.completedDate || "—"}</td>
-                    <td className="px-5 py-3.5"><StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} /></td>
+                  <tr key={m.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 py-3 font-mono text-xs font-bold text-[#28166F]">{m.computerId}</td>
+                    <td className="px-5 py-3 text-xs text-slate-800 font-semibold max-w-48 truncate">{m.activity}</td>
+                    <td className="px-5 py-3 text-xs font-mono text-slate-600 font-medium">{m.completedDate || "—"}</td>
+                    <td className="px-5 py-3"><StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} /></td>
                   </tr>
                 ))}
               </tbody>

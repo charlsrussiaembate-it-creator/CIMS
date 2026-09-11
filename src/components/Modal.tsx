@@ -30,29 +30,29 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm modal-backdrop-enter"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs modal-backdrop-enter"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`bg-[#0f172a] border border-[#334155] rounded-2xl shadow-2xl shadow-black/80 w-full ${maxWidth} modal-dialog-enter overflow-hidden`}
+        className={`bg-white border border-slate-200 rounded-2xl shadow-xl w-full ${maxWidth} modal-dialog-enter overflow-hidden text-slate-900 font-sans`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e293b] bg-[#0b1329]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/70">
           <div>
-            <h2 className="text-base font-bold text-white tracking-wide">{title}</h2>
-            {subtitle && <p className="text-xs text-[#64748b] mt-0.5">{subtitle}</p>}
+            <h2 className="text-base font-serif font-bold text-slate-900 tracking-tight">{title}</h2>
+            {subtitle && <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94a3b8] hover:text-white hover:bg-[#1e293b] transition-all"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all cursor-pointer"
             aria-label="Close modal"
           >
             <AppIcon name="close" size={14} />
           </button>
         </div>
-        <div className="px-6 py-5 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="px-6 py-5 max-h-[80vh] overflow-y-auto text-slate-800">{children}</div>
       </div>
     </div>,
     document.body

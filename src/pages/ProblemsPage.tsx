@@ -98,17 +98,19 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       m => m.computerId === computerId && (m.status === "Scheduled" || m.status === "In Progress")
     );
 
-    let newStatus: typeof comp.status | null = null;
-    if (!hasActiveProblems && !hasActiveMaintenance && (comp.status === "Needs Maintenance" || comp.status === "Under Repair")) {
-      newStatus = "Active";
-    } else if (hasActiveProblems && comp.status === "Active") {
-      newStatus = "Needs Maintenance";
+    let nextStatus = comp.status;
+    if (hasActiveProblems) {
+      nextStatus = "Needs Maintenance";
+    } else if (hasActiveMaintenance) {
+      nextStatus = "Under Repair";
+    } else {
+      nextStatus = "Active";
     }
 
-    if (newStatus && newStatus !== comp.status) {
-      await api.updateComputer(computerId, { status: newStatus }).catch(() => null);
-      addLog("admin", "Admin", "Computer Status Updated", `${computerId} status synchronized to ${newStatus}`);
-      return currentComputers.map(c => c.id === computerId ? { ...c, status: newStatus! } : c);
+    if (nextStatus !== comp.status) {
+      const updatedComp = { ...comp, status: nextStatus };
+      await api.updateComputer(comp.id, updatedComp).catch(() => null);
+      return currentComputers.map(c => c.id === comp.id ? updatedComp : c);
     }
     return currentComputers;
   }
@@ -116,96 +118,113 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
   async function handleSave() {
     setFormError("");
     if (!form.computerId) {
-      setFormError("Please select an affected workstation.");
+      setFormError("Select a computer.");
       return;
     }
     if (!form.description.trim()) {
-      setFormError("Problem description is required.");
+      setFormError("Provide a detailed description of the problem.");
       return;
     }
     if (!form.reportedBy.trim()) {
-      setFormError("Reporter name is required.");
+      setFormError("Enter the name of the person reporting this issue.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (editing) {
-        const updated = await api.updateProblem(editing.id, form).catch(() => ({ ...editing, ...form }));
-        const updatedProblems = data.problems.map(p => p.id === editing.id ? { ...p, ...updated } : p);
-        const updatedComputers = await syncComputerStatus(form.computerId, updatedProblems, data.computers);
-        setData({ ...data, problems: updatedProblems, computers: updatedComputers });
-        addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${editing.computerId} (Status: ${form.status})`);
+        const payload: Problem = {
+          ...editing,
+          computerId: form.computerId,
+          description: form.description.trim(),
+          reportedBy: form.reportedBy.trim(),
+          status: form.status,
+        };
+        const updated = await api.updateProblem(editing.id, payload).catch(() => payload);
+        const nextProblems = data.problems.map(p => p.id === editing.id ? updated : p);
+        const nextComputers = await syncComputerStatus(form.computerId, nextProblems, data.computers);
+        setData({ ...data, problems: nextProblems, computers: nextComputers });
+        addLog("admin", "Admin", "Problem Updated", `Updated ${editing.id} on ${form.computerId} to "${form.status}"`);
       } else {
         const id = generateId("PRB", data.problems);
-        const newP: Problem = { id, ...form, status: "Open", dateReported: todayDate() };
-        const saved = await api.createProblem(newP).catch(() => newP);
-        const updatedProblems = [saved, ...data.problems];
-        const updatedComputers = await syncComputerStatus(form.computerId, updatedProblems, data.computers);
-        setData({ ...data, problems: updatedProblems, computers: updatedComputers });
-        addLog(role, role === "admin" ? "Admin" : form.reportedBy, "Problem Reported", `Reported ${id} on ${form.computerId}: ${form.description.slice(0, 60)}`);
+        const newProb: Problem = {
+          id,
+          computerId: form.computerId,
+          description: form.description.trim(),
+          reportedBy: form.reportedBy.trim(),
+          status: form.status,
+          dateReported: todayDate(),
+        };
+        const created = await api.createProblem(newProb).catch(() => newProb);
+        const nextProblems = [created, ...data.problems];
+        const nextComputers = await syncComputerStatus(form.computerId, nextProblems, data.computers);
+        setData({ ...data, problems: nextProblems, computers: nextComputers });
+        addLog(role, form.reportedBy.trim(), "Problem Reported", `Reported issue on ${form.computerId}: "${form.description.slice(0, 50)}..."`);
       }
       setShowModal(false);
     } catch (err: any) {
-      setFormError(err.message || "Failed to save problem report.");
+      setFormError(err.message || "Failed to save problem ticket.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function advanceStatus(p: Problem) {
+    const nextStatus = PROBLEM_STATUS_FLOW[p.status];
+    if (!nextStatus) return;
+
+    try {
+      const updated: Problem = { ...p, status: nextStatus };
+      await api.updateProblem(p.id, updated).catch(() => null);
+      const nextProblems = data.problems.map(item => item.id === p.id ? updated : item);
+      const nextComputers = await syncComputerStatus(p.computerId, nextProblems, data.computers);
+      setData({ ...data, problems: nextProblems, computers: nextComputers });
+      addLog("admin", "Admin", "Problem Status Advanced", `Advanced ${p.id} on ${p.computerId} to "${nextStatus}"`);
+    } catch {
+      // Fallback
     }
   }
 
   async function handleDelete(id: string) {
     try {
       await api.deleteProblem(id).catch(() => null);
-      const targetProblem = data.problems.find(p => p.id === id);
-      const remainingProblems = data.problems.filter(p => p.id !== id);
-      const updatedComputers = targetProblem
-        ? await syncComputerStatus(targetProblem.computerId, remainingProblems, data.computers)
+      const target = data.problems.find(p => p.id === id);
+      const nextProblems = data.problems.filter(p => p.id !== id);
+      const nextComputers = target
+        ? await syncComputerStatus(target.computerId, nextProblems, data.computers)
         : data.computers;
-      setData({ ...data, problems: remainingProblems, computers: updatedComputers });
-      addLog("admin", "Admin", "Problem Deleted", `Deleted problem ${id}`);
+
+      setData({ ...data, problems: nextProblems, computers: nextComputers });
+      addLog("admin", "Admin", "Problem Deleted", `Deleted problem record ${id}`);
     } finally {
       setDeleteConfirm(null);
     }
   }
 
-  async function advanceStatus(p: Problem) {
-    const next = PROBLEM_STATUS_FLOW[p.status];
-    if (!next) return;
-    try {
-      await api.updateProblem(p.id, { status: next }).catch(() => null);
-      const updatedProblems = data.problems.map(x => x.id === p.id ? { ...x, status: next } : x);
-      const updatedComputers = await syncComputerStatus(p.computerId, updatedProblems, data.computers);
-      setData({ ...data, problems: updatedProblems, computers: updatedComputers });
-      addLog("admin", "Admin", "Problem Status Updated", `${p.id} status: ${p.status} → ${next}`);
-    } catch {
-      // Fallback
-    }
-  }
-
-  const f = "w-full bg-[#131d33] border border-[#334155] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-[#64748b] focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-all";
-  const lbl = "block text-xs font-semibold text-[#94a3b8] mb-1.5";
+  const f = "w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#28166F] shadow-2xs transition-colors";
+  const lbl = "block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider";
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-5 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans text-slate-900">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-tight">
               {role === "staff" ? "Problem Reports" : "Problem & Incident Management"}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 font-mono">
               {openCount} Open Tickets
             </span>
           </div>
-          <p className="text-xs text-[#94a3b8] mt-1">
+          <p className="text-xs text-slate-500 mt-0.5">
             Track reported laboratory hardware anomalies, display faults, and maintenance requests
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {role === "staff" ? (
-            <span className="text-xs text-[#64748b] bg-[#0f172a] border border-[#1e293b] px-3.5 py-2 rounded-xl">
+            <span className="text-xs text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg font-medium">
               Staff View · Use "Report Problem" to file an issue
             </span>
           ) : (
@@ -222,28 +241,28 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       </div>
 
       {/* Pipeline Status Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {[
-          { id: "All", label: "All Tickets", count: data.problems.length, color: "text-white" },
-          { id: "Open", label: "Open", count: openCount, color: "text-rose-400" },
-          { id: "In Progress", label: "In Progress", count: inProgressCount, color: "text-amber-400" },
-          { id: "Resolved", label: "Resolved", count: resolvedCount, color: "text-emerald-400" },
-          { id: "Closed", label: "Closed", count: closedCount, color: "text-slate-400" },
+          { id: "All", label: "All Tickets", count: data.problems.length },
+          { id: "Open", label: "Open", count: openCount },
+          { id: "In Progress", label: "In Progress", count: inProgressCount },
+          { id: "Resolved", label: "Resolved", count: resolvedCount },
+          { id: "Closed", label: "Closed", count: closedCount },
         ].map(tab => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setFilterStatus(tab.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 flex-shrink-0 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               filterStatus === tab.id
-                ? "bg-[#0ea5e9] text-[#0b1329] shadow-md shadow-[#0ea5e9]/25"
-                : "bg-[#0f172a] border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155]"
+                ? "bg-[#28166F] text-white shadow-xs font-bold"
+                : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
             }`}
           >
             <span>{tab.label}</span>
             <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                filterStatus === tab.id ? "bg-[#0b1329]/20 text-[#0b1329]" : "bg-[#131d33] text-[#64748b]"
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                filterStatus === tab.id ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
               }`}
             >
               {tab.count}
@@ -253,35 +272,35 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="relative w-full md:w-80">
           <input
             type="text"
             placeholder="Search problems, computer ID, or reporter…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-[#131d33] border border-[#334155] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-[#64748b] focus:border-[#0ea5e9] transition-colors"
+            className="w-full bg-slate-50/70 border border-slate-200 rounded-lg pl-9 pr-8 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#28166F] focus:bg-white transition-colors"
           />
-          <span className="absolute left-3 top-2.5 text-[#64748b] pointer-events-none flex items-center">
+          <span className="absolute left-3 top-2 text-slate-400 pointer-events-none flex items-center">
             <AppIcon name="search" size={13} />
           </span>
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-2.5 text-[#64748b] hover:text-white flex items-center"
+              className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 flex items-center cursor-pointer"
             >
               <AppIcon name="close" size={12} />
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <span className="text-xs text-[#94a3b8]">Computer:</span>
+        <div className="flex items-center gap-2.5 w-full md:w-auto font-medium text-xs text-slate-600">
+          <span>Workstation:</span>
           <select
             value={filterComputer}
             onChange={e => setFilterComputer(e.target.value)}
-            className="bg-[#131d33] border border-[#334155] rounded-xl px-3 py-1.5 text-xs text-white focus:border-[#0ea5e9] transition-colors"
+            className="bg-slate-50/70 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:border-[#28166F] focus:bg-white transition-colors cursor-pointer"
           >
             <option value="All">All Workstations</option>
             {data.computers.map(c => <option key={c.id} value={c.id}>{c.id} ({c.location})</option>)}
@@ -290,7 +309,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       </div>
 
       {/* Problem Cards List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {sorted.map(p => {
           const computer = data.computers.find(c => c.id === p.computerId);
           const nextStatus = PROBLEM_STATUS_FLOW[p.status];
@@ -299,66 +318,62 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
           return (
             <div
               key={p.id}
-              className="bg-[#0f172a] border border-[#1e293b] hover:border-[#334155] rounded-xl p-5 transition-all space-y-4 shadow-sm group"
+              className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 transition-all space-y-3 shadow-xs group"
             >
               {/* Header Info */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-mono text-xs font-black text-[#38bdf8] bg-[#0284c7]/10 px-2.5 py-1 rounded-lg border border-[#0284c7]/20">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="font-mono text-xs font-bold text-[#28166F] bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
                     {p.computerId}
                   </span>
-                  <span className="font-mono text-xs text-[#64748b]">{p.id}</span>
+                  <span className="font-mono text-xs text-slate-500 font-medium">{p.id}</span>
                   {computer && (
-                    <span className="text-xs text-[#94a3b8] flex items-center gap-1">
-                      <AppIcon name="location" size={11} className="text-[#64748b]" />
+                    <span className="text-xs text-slate-600 font-medium flex items-center gap-1">
+                      <AppIcon name="location" size={11} className="text-slate-500" />
                       <span>{computer.location}</span>
                     </span>
                   )}
                   <StatusBadge label={p.status} variant={getProblemStatusVariant(p.status)} />
                 </div>
 
-                <div className="text-[11px] text-[#64748b] flex items-center gap-2">
-                  <span>Reported on: <strong className="text-[#94a3b8] font-mono">{p.dateReported}</strong></span>
+                <div className="text-[11px] text-slate-600 flex items-center gap-2 font-medium">
+                  <span>Reported on: <strong className="text-slate-800 font-mono">{p.dateReported}</strong></span>
                   <span>·</span>
-                  <span>by <strong className="text-white">{p.reportedBy}</strong></span>
+                  <span>by <strong className="text-slate-800 font-bold">{p.reportedBy}</strong></span>
                 </div>
               </div>
 
               {/* Description Body */}
-              <div className="bg-[#131d33] border border-[#1e293b] rounded-xl p-4">
-                <p className="text-sm text-white leading-relaxed">{p.description}</p>
-                <div className="text-[11px] text-[#64748b] mt-2 italic flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#38bdf8] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                    <line x1="12" y1="16" x2="12" y2="12" strokeWidth="2"/>
-                    <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="2"/>
-                  </svg>
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-lg p-3.5">
+                <p className="text-xs font-semibold text-slate-800 leading-relaxed">{p.description}</p>
+                <div className="text-[11px] text-slate-600 mt-1.5 flex items-center gap-1.5 font-medium">
+                  <AppIcon name="info" size={12} className="text-[#28166F] flex-shrink-0" />
                   <span>{STATUS_DESCRIPTIONS[p.status]}</span>
                 </div>
               </div>
 
               {/* Visual Workflow Steps Bar */}
-              <div className="flex items-center gap-2 pt-1 flex-wrap">
-                <span className="text-[10px] uppercase font-bold text-[#64748b] mr-2">Lifecycle:</span>
+              <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                <span className="text-[10px] uppercase font-bold text-slate-500 mr-1">Lifecycle:</span>
                 {ALL_STATUSES.map((st, i) => {
                   const isCurrent = p.status === st;
                   const isPassed = ALL_STATUSES.indexOf(p.status) > i;
 
                   return (
-                    <div key={st} className="flex items-center gap-2">
+                    <div key={st} className="flex items-center gap-1.5">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold flex items-center gap-1 ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
                           isCurrent
-                            ? "bg-[#0ea5e9]/20 text-[#38bdf8] border border-[#0ea5e9]/40"
+                            ? "bg-[#28166F] text-white border border-[#28166F] shadow-2xs"
                             : isPassed
-                            ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-                            : "text-[#475569] bg-[#1e293b]/40"
+                            ? "text-emerald-700 bg-emerald-50 border border-emerald-200"
+                            : "text-slate-500 bg-slate-100 border border-slate-200"
                         }`}
                       >
-                        {isPassed && <AppIcon name="check" size={10} className="text-emerald-400" />}
+                        {isPassed && <AppIcon name="check" size={10} className="text-emerald-600" />}
                         <span>{st}</span>
                       </span>
-                      {i < ALL_STATUSES.length - 1 && <span className="text-[#334155] text-xs">→</span>}
+                      {i < ALL_STATUSES.length - 1 && <span className="text-slate-300 text-xs">→</span>}
                     </div>
                   );
                 })}
@@ -366,25 +381,25 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
 
               {/* Action Controls */}
               {role === "admin" && (
-                <div className="pt-3 border-t border-[#1e293b] flex items-center justify-between gap-3">
+                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     {nextStatus && (
                       <button
                         type="button"
                         onClick={() => advanceStatus(p)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
                           nextStatus === "Resolved"
-                            ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                             : nextStatus === "In Progress"
-                            ? "bg-amber-500 hover:bg-amber-600 text-[#0b1329] shadow-amber-500/20"
-                            : "bg-[#0ea5e9] hover:bg-[#38bdf8] text-[#0b1329] shadow-sky-500/20"
+                            ? "bg-amber-600 hover:bg-amber-700 text-white"
+                            : "bg-[#28166F] hover:bg-[#1e1058] text-white"
                         }`}
                       >
                         <span>→ Advance to {nextStatus}</span>
                       </button>
                     )}
                     {isResolved && (
-                      <span className="text-xs text-emerald-400 flex items-center gap-1">
+                      <span className="text-xs text-emerald-700 font-bold flex items-center gap-1">
                         <AppIcon name="check" size={12} />
                         <span>Resolved in system</span>
                       </span>
@@ -395,14 +410,14 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
                     <button
                       type="button"
                       onClick={() => openEdit(p)}
-                      className="px-3 py-1.5 rounded-lg border border-[#334155] text-xs font-semibold text-[#94a3b8] hover:text-white hover:border-[#0ea5e9] transition-colors"
+                      className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
                     >
                       Edit Ticket
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(p.id)}
-                      className="px-3 py-1.5 rounded-lg border border-[#334155] text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500 hover:border-rose-500 transition-colors"
+                      className="px-2.5 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors cursor-pointer"
                     >
                       Delete
                     </button>
@@ -414,10 +429,10 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
         })}
 
         {sorted.length === 0 && (
-          <div className="text-center py-16 bg-[#0f172a] border border-[#1e293b] rounded-xl text-sm text-[#64748b]">
-            <AppIcon name="check" size={32} className="mx-auto mb-2 text-emerald-400" />
-            <div className="text-base font-bold text-white mb-1">No problem reports found</div>
-            <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-4">
+          <div className="text-center py-16 bg-white border border-slate-200 shadow-xs rounded-xl p-8">
+            <AppIcon name="check" size={32} className="mx-auto mb-2 text-emerald-600" />
+            <div className="text-base font-serif font-bold text-slate-900 mb-1">No problem reports found</div>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 font-medium">
               All workstations in this selection are operational with no issues logged.
             </p>
             {(filterStatus !== "All" || filterComputer !== "All" || searchQuery) && (
@@ -443,7 +458,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
         >
           <div className="space-y-4">
             {formError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
                 {formError}
               </div>
             )}
@@ -451,7 +466,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
             <div>
               <label className={lbl}>Affected Workstation *</label>
               {data.computers.length === 0 ? (
-                <div className="text-xs text-rose-400 p-2.5 bg-rose-500/10 rounded-xl">
+                <div className="text-xs text-rose-700 p-2.5 bg-rose-50 border border-rose-200 rounded-xl font-medium">
                   No computers registered in inventory.
                 </div>
               ) : (
@@ -479,7 +494,7 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3.5">
               <div>
                 <label className={lbl}>Reported By *</label>
                 <input
@@ -501,19 +516,19 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-[#1e293b]">
+            <div className="flex gap-3 pt-3.5 border-t border-slate-200">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 bg-gradient-to-r from-rose-600 to-rose-500 text-white text-xs font-bold rounded-xl hover:from-rose-700 hover:to-rose-600 disabled:opacity-50 transition-all shadow-md shadow-rose-600/25"
+                className="btn-destructive flex-1 py-2.5"
               >
                 {isSubmitting ? "Saving Ticket..." : editing ? "Save Changes" : "Create Problem Ticket"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+                className="btn-secondary px-5 py-2.5"
               >
                 Cancel
               </button>
@@ -525,23 +540,23 @@ export default function ProblemsPage({ data, setData, role, addLog }: Props) {
       {/* Delete Ticket Confirmation */}
       {deleteConfirm && (
         <Modal title="Delete Incident Ticket" onClose={() => setDeleteConfirm(null)}>
-          <div className="space-y-4">
-            <p className="text-sm text-[#94a3b8] leading-relaxed">
+          <div className="space-y-4 text-slate-800">
+            <p className="text-sm leading-relaxed">
               Are you sure you want to permanently delete problem record{" "}
-              <span className="font-mono text-white font-bold">{deleteConfirm}</span>?
+              <span className="font-mono text-slate-900 font-bold">{deleteConfirm}</span>?
             </p>
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-2 bg-red-500 text-white text-xs font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/25"
+                className="btn-destructive flex-1 py-2"
               >
                 Delete Ticket
               </button>
               <button
                 type="button"
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+                className="btn-secondary px-4 py-2"
               >
                 Cancel
               </button>

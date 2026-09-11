@@ -148,12 +148,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               {/* Satellite Box 1 */}
               <div className="floating-satellite-1">
                 <div className="floating-mini-box bg-white/95 shadow-[0_10px_25px_rgba(0,0,0,0.05)] p-3 rounded-2xl flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#0071e3]/10 flex items-center justify-center text-[#0071e3]">
+                  <div className="w-7 h-7 rounded-lg bg-[#28166F]/10 flex items-center justify-center text-[#28166F]">
                     <AppIcon name="computer" size={14} />
                   </div>
                   <div className="text-left pr-1">
                     <div className="text-[11px] font-semibold text-[#1d1d1f]">Inventory</div>
-                    <div className="text-[9px] text-[#86868b]">All Systems Ready</div>
+                    <div className="text-[9px] text-slate-500 font-medium">All Systems Ready</div>
                   </div>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   </div>
                   <div className="text-left pr-1">
                     <div className="text-[11px] font-semibold text-[#1d1d1f]">Maintenance</div>
-                    <div className="text-[9px] text-[#86868b]">Active · Verified</div>
+                    <div className="text-[9px] text-slate-500 font-medium">Active · Verified</div>
                   </div>
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
               {/* Satellite Box 4 */}
               <div className="floating-satellite-4">
-                <div className="w-8 h-8 rounded-xl bg-[#0071e3]/15 flex items-center justify-center text-[#0071e3]">
+                <div className="w-8 h-8 rounded-xl bg-[#28166F]/10 flex items-center justify-center text-[#28166F]">
                   <AppIcon name="tool" size={14} />
                 </div>
               </div>
@@ -194,13 +194,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
           {/* Hero Copy & Typography (Fully visible, not clipped) */}
           <div className="relative z-10 max-w-xl mx-auto lg:mx-0 pt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#0071e3]">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#28166F]">
               Computer Inventory & Maintenance
             </p>
             <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-semibold leading-[1.15] tracking-[-0.035em] text-[#1d1d1f]">
               Keep every computer ready.
             </h1>
-            <p className="mt-3 text-sm sm:text-[15px] leading-relaxed text-[#6e6e73]">
+            <p className="mt-3 text-sm sm:text-[15px] leading-relaxed text-slate-600 font-medium">
               A unified management platform for tracking computer lab inventory, reporting hardware issues, scheduling maintenance, and auditing system events.
             </p>
           </div>
@@ -209,16 +209,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         {/* =====================================================
             RIGHT ~42% — INTEGRATED AUTHENTICATION SIDEBAR (STICKY)
         ===================================================== */}
-        <section className="lg:w-[42%] lg:sticky lg:top-[76px] lg:self-start lg:h-[calc(100vh-76px)] bg-[#f0f2f5]/50 lg:bg-[#f0f2f5]/60 flex flex-col justify-between p-6 sm:p-10 lg:p-12 pb-10 sm:pb-12 relative overflow-y-auto">
-          {/* Form container: Starts in the upper-middle area with ~15-20% top breathing room */}
-          <div className="w-full max-w-[420px] mx-auto pt-4 sm:pt-8 lg:pt-10">
+        <section className="lg:w-[42%] lg:sticky lg:top-[76px] lg:self-start lg:h-[calc(100vh-76px)] bg-[#f0f2f5]/50 lg:bg-[#f0f2f5]/60 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 relative overflow-y-auto">
+          {/* Form container: Vertically & horizontally centered */}
+          <div className="w-full max-w-[420px] mx-auto my-auto py-4">
             {/* Login Header */}
             <div className="mb-7">
               <h2 className="text-3xl font-bold font-serif tracking-[-0.035em] text-[#1d1d1f]">
                 Welcome back.
               </h2>
 
-              <p className="mt-1.5 text-sm font-medium text-[#6e6e73] font-sans">
+              <p className="mt-1.5 text-sm font-medium text-slate-600 font-sans">
                 Sign in to manage your laboratory workspace.
               </p>
             </div>
@@ -321,7 +321,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
               {/* Remember me + Forgot password */}
               <div className="flex items-center justify-between gap-4 pt-1">
-                <label className="flex items-center gap-2 text-[13px] font-medium text-[#6e6e73] cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-[13px] font-medium text-slate-600 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
@@ -421,7 +421,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </form>
 
             {/* Footer note directly under form */}
-            <p className="mt-6 text-center text-[11px] font-medium text-[#86868b] font-sans">
+            <p className="mt-6 text-center text-[11px] font-medium text-slate-500 font-sans">
               St. Rita's College of Balingasag · Computer Laboratories Management System
             </p>
           </div>

@@ -5,7 +5,6 @@ import { CAMPUS_LOCATIONS } from "../data";
 
 interface HeaderProps {
   role: UserRole;
-  setRole?: (r: UserRole) => void;
   adminPage: AdminPage;
   staffPage: StaffPage;
   computerLocationFilter?: string;
@@ -32,7 +31,6 @@ const STAFF_PAGE_TITLES: Record<StaffPage, { title: string; category: string }> 
 
 export default function Header({
   role,
-  setRole,
   adminPage,
   staffPage,
   computerLocationFilter = "All",
@@ -136,42 +134,6 @@ export default function Header({
 
       {/* Right Controls & Info */}
       <div className="flex items-center gap-3.5">
-        {/* Integrated Role Switcher - No overlapping float! */}
-        {setRole && (
-          <div className="flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-lg gap-0.5">
-            <span className="hidden lg:flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-slate-500 font-mono uppercase">
-              <AppIcon name="bolt" size={11} className="text-amber-500" />
-              <span>Role:</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setRole("admin")}
-              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                role === "admin"
-                  ? "bg-[#28166F] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-              }`}
-              title="Switch to Admin view"
-            >
-              <AppIcon name="shield" size={12} />
-              <span>Admin</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("staff")}
-              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                role === "staff"
-                  ? "bg-[#28166F] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-              }`}
-              title="Switch to Staff view"
-            >
-              <AppIcon name="staff" size={12} />
-              <span>Staff</span>
-            </button>
-          </div>
-        )}
-
         {/* Current Date */}
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 font-mono">
           <AppIcon name="calendar" size={13} className="text-slate-400" />
@@ -182,7 +144,7 @@ export default function Header({
         <div className="hidden sm:block h-5 w-px bg-slate-200" />
 
         {/* ========================================================
-            INTERACTIVE PROFILE WITH LOGOUT
+            INTERACTIVE PROFILE ICON WITH LOGOUT
         ======================================================== */}
         <div className="relative" ref={profileMenuRef}>
           <button
@@ -190,28 +152,14 @@ export default function Header({
             onClick={() => setIsProfileOpen(prev => !prev)}
             aria-expanded={isProfileOpen}
             aria-haspopup="true"
-            title="Open Profile"
-            className={`flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl border transition-all cursor-pointer ${
+            title="User Profile & Settings"
+            className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-xs ${
               isProfileOpen
-                ? "bg-slate-100 border-[#28166F]/40 shadow-xs ring-2 ring-[#28166F]/15"
-                : "bg-white hover:bg-slate-50 border-slate-200"
+                ? "bg-[#28166F] text-white border-[#28166F] ring-2 ring-[#28166F]/20"
+                : "bg-white hover:bg-slate-50 text-slate-700 hover:text-[#28166F] border-slate-200"
             }`}
           >
-            <div className="w-8 h-8 rounded-full bg-[#28166F] border border-indigo-300/40 flex items-center justify-center text-xs font-bold text-white shadow-xs flex-shrink-0 font-sans">
-              {role === "admin" ? "AD" : "ST"}
-            </div>
-            <div className="hidden xl:block leading-tight text-left">
-              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 font-sans">
-                <span>{role === "admin" ? "System Admin" : "Lab Staff"}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              </div>
-              <div className="text-[10px] text-slate-500 font-mono">
-                {role === "admin" ? "admin@school.edu" : "staff@school.edu"}
-              </div>
-            </div>
-            <span className={`text-[10px] text-slate-400 transition-transform duration-200 ml-0.5 ${isProfileOpen ? "rotate-180 text-[#28166F]" : ""}`}>
-              ▼
-            </span>
+            <AppIcon name="user" size={17} />
           </button>
 
           {/* Profile Popover / Modal Menu */}
@@ -219,8 +167,8 @@ export default function Header({
             <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-4 text-left z-50 animate-dialogPop">
               {/* User Identity Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <div className="w-11 h-11 rounded-full bg-[#28166F] border-2 border-indigo-200 flex items-center justify-center text-sm font-black text-white shadow-xs flex-shrink-0 font-sans">
-                  {role === "admin" ? "AD" : "ST"}
+                <div className="w-11 h-11 rounded-full bg-[#28166F] border-2 border-indigo-200 flex items-center justify-center text-white shadow-xs flex-shrink-0 font-sans">
+                  <AppIcon name="user" size={20} className="text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -234,7 +182,7 @@ export default function Header({
                   <div className="text-xs text-slate-500 font-mono truncate">
                     {role === "admin" ? "admin@school.edu" : "staff@school.edu"}
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
+                  <div className="text-[10px] text-slate-500 font-medium mt-0.5">
                     St. Rita's College of Balingasag
                   </div>
                 </div>

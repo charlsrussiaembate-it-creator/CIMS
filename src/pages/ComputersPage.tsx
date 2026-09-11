@@ -42,11 +42,11 @@ const emptyForm = (): Omit<Computer, "id"> => ({
 
 export const getLabBadge = (loc: string) => {
   const l = loc.toLowerCase();
-  if (l.includes("comlab")) return { label: "ComLab", icon: "comlab", color: "bg-sky-500/15 text-sky-400 border-sky-500/30" };
-  if (l.includes("shs")) return { label: "SHS Lab", icon: "shs", color: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" };
-  if (l.includes("registrar") || l.includes("reg")) return { label: "Registrar", icon: "registrar", color: "bg-purple-500/15 text-purple-400 border-purple-500/30" };
-  if (l.includes("laboratory") || l.includes("lab")) return { label: "Laboratory", icon: "laboratory", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" };
-  return { label: loc.split("—")[0]?.trim() || "Room", icon: "location", color: "bg-slate-800 text-slate-300 border-slate-700" };
+  if (l.includes("comlab")) return { label: "ComLab", icon: "comlab", color: "bg-indigo-50 text-[#28166F] border-indigo-200" };
+  if (l.includes("shs")) return { label: "SHS Lab", icon: "shs", color: "bg-purple-50 text-purple-700 border-purple-200" };
+  if (l.includes("registrar") || l.includes("reg")) return { label: "Registrar", icon: "registrar", color: "bg-indigo-50 text-[#28166F] border-indigo-200" };
+  if (l.includes("laboratory") || l.includes("lab")) return { label: "Laboratory", icon: "laboratory", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  return { label: loc.split("—")[0]?.trim() || "Room", icon: "location", color: "bg-slate-100 text-slate-700 border-slate-200" };
 };
 
 export default function ComputersPage({
@@ -98,32 +98,38 @@ export default function ComputersPage({
   const filtered = data.computers.filter(c => {
     const q = search.toLowerCase();
     const matchSearch =
+      c.id.toLowerCase().includes(q) ||
       c.name.toLowerCase().includes(q) ||
       c.location.toLowerCase().includes(q) ||
-      c.id.toLowerCase().includes(q) ||
       c.cpu.toLowerCase().includes(q) ||
+      c.ram.toLowerCase().includes(q) ||
+      c.storage.toLowerCase().includes(q) ||
       c.os.toLowerCase().includes(q);
 
     const matchStatus = filterStatus === "All" || c.status === filterStatus;
 
-    const matchLocation = filterLocation === "All" || (() => {
+    let matchLocation = true;
+    if (filterLocation !== "All") {
       const l = filterLocation.toLowerCase();
       const cloc = c.location.toLowerCase();
-      if (l === "comlab") return cloc.includes("comlab");
-      if (l === "shs lab") return cloc.includes("shs");
-      if (l === "registrar") return cloc.includes("registrar") || cloc.includes("reg");
-      if (l === "laboratory") return (cloc.includes("laboratory") || cloc.includes("lab")) && !cloc.includes("comlab") && !cloc.includes("shs");
-      return cloc.includes(l);
-    })();
+      if (l === "comlab") matchLocation = cloc.includes("comlab");
+      else if (l === "shs lab") matchLocation = cloc.includes("shs");
+      else if (l === "registrar") matchLocation = cloc.includes("registrar") || cloc.includes("reg");
+      else if (l === "laboratory") matchLocation = (cloc.includes("laboratory") || cloc.includes("lab")) && !cloc.includes("comlab") && !cloc.includes("shs");
+      else matchLocation = cloc.includes(l);
+    }
 
     return matchSearch && matchStatus && matchLocation;
   });
 
-  function openAdd(preferredRoom?: string) {
+  function openAdd(locHint?: string) {
     setEditing(null);
     setIdInput("");
-    const initialLocation = preferredRoom && preferredRoom !== "All" ? `${preferredRoom} — Seat 1` : "";
-    setForm({ ...emptyForm(), location: initialLocation });
+    let initialLoc = "";
+    if (locHint && locHint !== "All") {
+      initialLoc = `${locHint} — Row 1, Seat `;
+    }
+    setForm({ ...emptyForm(), location: initialLoc });
     setFormError("");
     setShowModal(true);
   }
@@ -204,32 +210,32 @@ export default function ComputersPage({
     }
   }
 
-  const f = "w-full bg-[#0a0f1d] border border-[#1e293b] rounded-lg px-3.5 py-2 text-xs text-white placeholder-[#475569] focus:outline-none focus:border-[#0ea5e9] transition-colors";
-  const lbl = "block text-[11px] font-semibold text-[#94a3b8] mb-1 uppercase tracking-wider";
+  const f = "w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#28166F] shadow-2xs transition-colors";
+  const lbl = "block text-[11px] font-bold text-slate-700 mb-1 uppercase tracking-wider";
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-5 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans text-slate-900">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
         <div>
           {/* Breadcrumbs Navigation */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-400 mb-2 font-medium">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5 font-medium">
             <button
               type="button"
               onClick={() => handleSelectLocation("All")}
               className={`transition-colors flex items-center gap-1.5 font-bold ${
                 filterLocation !== "All"
-                  ? "text-slate-400 hover:text-sky-400 cursor-pointer"
-                  : "text-slate-300"
+                  ? "text-slate-500 hover:text-[#28166F] cursor-pointer"
+                  : "text-slate-700"
               }`}
             >
-              <AppIcon name="computers" size={13} className={filterLocation !== "All" ? "text-slate-500" : "text-sky-400"} />
+              <AppIcon name="computers" size={13} className={filterLocation !== "All" ? "text-slate-400" : "text-[#28166F]"} />
               <span>Computers</span>
             </button>
             {filterLocation !== "All" && (
               <>
-                <span className="text-slate-600">/</span>
-                <span className="text-sky-400 font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20">
+                <span className="text-slate-300">/</span>
+                <span className="text-[#28166F] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#28166F]/10 border border-[#28166F]/20">
                   <AppIcon name={CAMPUS_LOCATIONS.find(l => l.id === filterLocation)?.icon || "computers"} size={12} />
                   <span>{filterLocation}</span>
                 </span>
@@ -238,24 +244,24 @@ export default function ComputersPage({
           </nav>
 
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-white tracking-tight">Workstation Inventory</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0ea5e9]/15 text-[#38bdf8] border border-[#0ea5e9]/30">
+            <h1 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-tight">Workstation Inventory</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#28166F]/10 text-[#28166F] border border-[#28166F]/20 font-mono">
               {data.computers.length} Units Enrolled
             </span>
           </div>
-          <p className="text-xs text-[#94a3b8] mt-1">
+          <p className="text-xs text-slate-500 mt-0.5">
             Manage computer hardware configurations, campus room allocations, and operational health
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#0f172a] border border-[#334155] rounded-xl p-1 gap-1">
+          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 gap-0.5">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                viewMode === "grid" ? "bg-[#0ea5e9] text-[#0b1329] shadow-md" : "text-[#94a3b8] hover:text-white"
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "grid" ? "bg-[#28166F] text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
               }`}
             >
               <AppIcon name="grid" size={13} />
@@ -264,8 +270,8 @@ export default function ComputersPage({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                viewMode === "table" ? "bg-[#0ea5e9] text-[#0b1329] shadow-md" : "text-[#94a3b8] hover:text-white"
+              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "table" ? "bg-[#28166F] text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
               }`}
             >
               <AppIcon name="table" size={13} />
@@ -289,16 +295,16 @@ export default function ComputersPage({
         <button
           type="button"
           onClick={() => handleSelectLocation("All")}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
             filterLocation === "All"
-              ? "bg-[#0ea5e9] text-[#0b1329] shadow-md shadow-[#0ea5e9]/20 font-bold"
-              : "bg-[#0f172a] border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155]"
+              ? "bg-[#28166F] text-white shadow-xs font-bold"
+              : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
           }`}
         >
-          <AppIcon name="computers" size={14} />
+          <AppIcon name="computers" size={13} />
           <span>All Workstations</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-            filterLocation === "All" ? "bg-[#0284c7] text-white" : "bg-[#1e293b] text-[#64748b]"
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+            filterLocation === "All" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
           }`}>
             {data.computers.length}
           </span>
@@ -313,17 +319,17 @@ export default function ComputersPage({
               key={loc.id}
               type="button"
               onClick={() => handleSelectLocation(loc.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 isSelected
-                  ? "bg-[#0ea5e9] text-[#0b1329] shadow-md shadow-[#0ea5e9]/20 font-bold"
-                  : "bg-[#0f172a] border border-[#1e293b] text-[#94a3b8] hover:text-white hover:border-[#334155]"
+                  ? "bg-[#28166F] text-white shadow-xs font-bold"
+                  : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
               }`}
               title={loc.fullName}
             >
-              <AppIcon name={loc.icon} size={14} />
+              <AppIcon name={loc.icon} size={13} />
               <span>{loc.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                isSelected ? "bg-[#0284c7] text-white" : "bg-[#1e293b] text-[#64748b]"
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
               }`}>
                 {count}
               </span>
@@ -333,21 +339,21 @@ export default function ComputersPage({
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="relative w-full md:w-80">
-          <AppIcon name="search" size={13} className="absolute left-3 top-2.5 text-[#64748b]" />
+          <AppIcon name="search" size={13} className="absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search by ID, name, specs, location…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#131d33] border border-[#334155] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-[#64748b] focus:border-[#0ea5e9] transition-colors"
+            className="w-full bg-slate-50/70 border border-slate-200 rounded-lg pl-9 pr-8 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#28166F] focus:bg-white transition-colors"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-3 top-2 text-[#64748b] hover:text-white text-xs"
+              className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 text-xs cursor-pointer"
             >
               <AppIcon name="close" size={12} />
             </button>
@@ -356,27 +362,27 @@ export default function ComputersPage({
 
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
             <span>Status:</span>
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="bg-[#131d33] border border-[#334155] rounded-xl px-3 py-1.5 text-xs text-white focus:border-[#0ea5e9] transition-colors"
+              className="bg-slate-50/70 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:border-[#28166F] focus:bg-white transition-colors cursor-pointer font-medium"
             >
               <option value="All">All Statuses</option>
               {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          <div className="text-xs text-[#64748b] font-mono">
-            Showing <strong className="text-white">{filtered.length}</strong> machines
+          <div className="text-xs text-slate-500 font-mono">
+            Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> machines
           </div>
         </div>
       </div>
 
       {/* VIEW MODE 1: GRID / CARD VIEW */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(c => {
             const activeProblems = data.problems.filter(p => p.computerId === c.id && (p.status === "Open" || p.status === "In Progress"));
             const machineMaintenance = data.maintenance.filter(m => m.computerId === c.id);
@@ -387,26 +393,26 @@ export default function ComputersPage({
               <div
                 key={c.id}
                 onClick={() => setExpandedId(isExpanded ? null : c.id)}
-                className={`bg-[#0f172a] border rounded-xl p-5 transition-all duration-200 cursor-pointer relative group flex flex-col justify-between ${
+                className={`bg-white border rounded-xl p-4 transition-all duration-200 cursor-pointer relative group flex flex-col justify-between shadow-xs hover:shadow-sm ${
                   isExpanded
-                    ? "border-[#0ea5e9] ring-1 ring-[#0ea5e9]/30"
-                    : "border-[#1e293b] hover:border-[#334155]"
+                    ? "border-[#28166F] ring-1 ring-[#28166F]/25"
+                    : "border-slate-200 hover:border-slate-300"
                 }`}
               >
                 <div>
                   {/* Card Top: Room Tag + ID + Status */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-start justify-between gap-2 mb-2.5">
                     <div>
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${badge.color}`}>
                           <AppIcon name={badge.icon} size={11} />
                           <span>{badge.label}</span>
                         </span>
-                        <span className="font-mono text-base font-bold text-white tracking-wide group-hover:text-[#38bdf8] transition-colors">
+                        <span className="font-mono text-base font-bold text-slate-900 tracking-tight group-hover:text-[#28166F] transition-colors">
                           {c.id}
                         </span>
                       </div>
-                      <div className="text-xs text-[#94a3b8] flex items-center gap-1.5">
+                      <div className="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
                         <AppIcon name="location" size={11} className="text-slate-500" />
                         <span className="truncate max-w-[200px]">{c.location}</span>
                       </div>
@@ -415,35 +421,35 @@ export default function ComputersPage({
                   </div>
 
                   {/* Hardware Spec Chips */}
-                  <div className="space-y-1.5 py-3 border-y border-[#1e293b]/80 my-3 text-xs">
-                    <div className="flex items-center justify-between text-[#94a3b8]">
-                      <span className="text-[#64748b] text-[11px]">Processor:</span>
-                      <span className="font-medium text-white truncate max-w-[170px]" title={c.cpu}>{c.cpu}</span>
+                  <div className="space-y-1 py-2.5 border-y border-slate-100 my-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-[11px] font-medium">Processor:</span>
+                      <span className="font-semibold text-slate-800 truncate max-w-[170px]" title={c.cpu}>{c.cpu}</span>
                     </div>
-                    <div className="flex items-center justify-between text-[#94a3b8]">
-                      <span className="text-[#64748b] text-[11px]">RAM & Storage:</span>
-                      <span className="font-mono text-[#cbd5e1]">{c.ram} · {c.storage}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-[11px] font-medium">RAM &amp; Storage:</span>
+                      <span className="font-mono font-medium text-slate-700">{c.ram} · {c.storage}</span>
                     </div>
-                    <div className="flex items-center justify-between text-[#94a3b8]">
-                      <span className="text-[#64748b] text-[11px]">OS:</span>
-                      <span className="text-[#94a3b8]">{c.os}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-[11px] font-medium">OS:</span>
+                      <span className="text-slate-600 font-medium">{c.os}</span>
                     </div>
                   </div>
 
                   {/* Operational Health Signals */}
-                  <div className="flex items-center gap-2 text-[11px] mb-4">
+                  <div className="flex items-center gap-2 text-[11px] mb-3">
                     {activeProblems.length > 0 ? (
-                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 font-semibold">
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-bold">
                         <AppIcon name="warning" size={11} />
                         <span>{activeProblems.length} Active Problem{activeProblems.length > 1 ? "s" : ""}</span>
                       </span>
                     ) : (
-                      <span className="text-emerald-400 font-medium flex items-center gap-1.5">
-                        <AppIcon name="check" size={11} /> No active issues
+                      <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                        <AppIcon name="check" size={11} /> Healthy
                       </span>
                     )}
-                    <span className="text-[#475569]">·</span>
-                    <span className="text-[#64748b]">
+                    <span className="text-slate-300">·</span>
+                    <span className="text-slate-500 font-medium">
                       {machineMaintenance.length} service records
                     </span>
                   </div>
@@ -451,30 +457,30 @@ export default function ComputersPage({
 
                 {/* Card Bottom: Quick Actions */}
                 <div
-                  className="flex items-center justify-between pt-2 border-t border-[#1e293b] text-xs"
+                  className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs"
                   onClick={e => e.stopPropagation()}
                 >
                   <button
                     type="button"
                     onClick={() => setExpandedId(isExpanded ? null : c.id)}
-                    className="text-[#38bdf8] hover:underline font-semibold flex items-center gap-1"
+                    className="text-[#28166F] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <span>{isExpanded ? "Hide Details" : "Inspect Specs"}</span>
                     <span className="text-[10px]">{isExpanded ? "▲" : "▼"}</span>
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => openEdit(c)}
-                      className="px-2.5 py-1 rounded bg-[#1e293b] text-[#94a3b8] hover:text-white hover:bg-[#334155] transition-colors"
+                      className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors cursor-pointer"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(c.id)}
-                      className="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                      className="px-2.5 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold transition-colors cursor-pointer"
                     >
                       Del
                     </button>
@@ -488,21 +494,21 @@ export default function ComputersPage({
 
       {/* VIEW MODE 2: DENSE TABLE VIEW */}
       {viewMode === "table" && (
-        <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#0b1329] border-b border-[#1e293b] text-[10px] uppercase font-bold text-[#64748b] tracking-wider">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5">Workstation ID</th>
-                  <th className="px-5 py-3.5">Campus Room / Location</th>
-                  <th className="px-5 py-3.5">Specs (CPU · RAM · Storage)</th>
-                  <th className="px-5 py-3.5">OS</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5">Issues</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-3">Workstation ID</th>
+                  <th className="px-5 py-3">Campus Room / Location</th>
+                  <th className="px-5 py-3">Specs (CPU · RAM · Storage)</th>
+                  <th className="px-5 py-3">OS</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Issues</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e293b]">
+              <tbody className="divide-y divide-slate-100">
                 {filtered.map(c => {
                   const activeProblems = data.problems.filter(p => p.computerId === c.id && (p.status === "Open" || p.status === "In Progress"));
                   const badge = getLabBadge(c.location);
@@ -511,57 +517,57 @@ export default function ComputersPage({
                     <tr
                       key={c.id}
                       onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
-                      className="hover:bg-[#131d33] transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                     >
-                      <td className="px-5 py-3.5 font-mono font-bold text-white group-hover:text-[#38bdf8] transition-colors">
+                      <td className="px-5 py-3 font-mono font-bold text-slate-900 group-hover:text-[#28166F] transition-colors">
                         {c.id}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${badge.color}`}>
                             <AppIcon name={badge.icon} size={11} />
                             <span>{badge.label}</span>
                           </span>
-                          <span className="text-[#94a3b8]">{c.location}</span>
+                          <span className="text-slate-600 font-medium">{c.location}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-white">
+                      <td className="px-5 py-3 text-slate-800">
                         <span className="font-semibold">{c.cpu}</span>
-                        <span className="text-[#64748b] mx-1.5">/</span>
-                        <span className="text-[#cbd5e1] font-mono">{c.ram}</span>
-                        <span className="text-[#64748b] mx-1.5">/</span>
-                        <span className="text-[#cbd5e1] font-mono">{c.storage}</span>
+                        <span className="text-slate-300 mx-1.5">/</span>
+                        <span className="text-slate-600 font-mono">{c.ram}</span>
+                        <span className="text-slate-300 mx-1.5">/</span>
+                        <span className="text-slate-600 font-mono">{c.storage}</span>
                       </td>
-                      <td className="px-5 py-3.5 text-[#94a3b8]">{c.os}</td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3 text-slate-600 font-medium">{c.os}</td>
+                      <td className="px-5 py-3">
                         <StatusBadge label={c.status} variant={getComputerStatusVariant(c.status)} />
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3">
                         {activeProblems.length > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                             <AppIcon name="warning" size={10} />
                             <span>{activeProblems.length} Active</span>
                           </span>
                         ) : (
-                          <span className="text-emerald-400 text-[11px] inline-flex items-center gap-1">
+                          <span className="text-emerald-700 text-[11px] font-semibold inline-flex items-center gap-1">
                             <AppIcon name="check" size={11} />
                             <span>Clear</span>
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 text-right" onClick={e => e.stopPropagation()}>
+                      <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => openEdit(c)}
-                            className="px-2 py-1 rounded bg-[#1e293b] text-[#94a3b8] hover:text-white hover:bg-[#334155] transition-colors"
+                            className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors cursor-pointer"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeleteConfirm(c.id)}
-                            className="px-2 py-1 rounded bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                            className="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold transition-colors cursor-pointer"
                           >
                             Del
                           </button>
@@ -578,16 +584,16 @@ export default function ComputersPage({
 
       {/* Empty State */}
       {filtered.length === 0 && (
-        <div className="text-center py-20 bg-[#0f172a] border border-[#1e293b] rounded-xl p-8">
-          <AppIcon name="search" size={36} className="mx-auto mb-3 text-slate-500" />
-          <div className="text-base font-bold text-white mb-1">No workstations found</div>
-          <p className="text-xs text-[#64748b] max-w-sm mx-auto mb-4">
+        <div className="text-center py-16 bg-white border border-slate-200 shadow-xs rounded-xl p-8">
+          <AppIcon name="search" size={32} className="mx-auto mb-2.5 text-slate-400" />
+          <div className="text-base font-serif font-bold text-slate-900 mb-1">No workstations found</div>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4 font-medium">
             No computers match your current room selection "{filterLocation}" or search keyword.
           </p>
           <button
             type="button"
             onClick={() => { setSearch(""); setFilterLocation("All"); setFilterStatus("All"); }}
-            className="px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-white text-xs font-semibold rounded-xl transition-colors"
+            className="btn-secondary"
           >
             Reset All Filters
           </button>
@@ -603,20 +609,20 @@ export default function ComputersPage({
         const badge = getLabBadge(comp.location);
 
         return (
-          <div className="bg-[#0b1329] border border-[#0ea5e9]/40 rounded-xl p-6 shadow-xl shadow-black/50 relative animate-fadeIn">
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#1e293b]">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-md relative animate-pageFadeSlide">
+            <div className="flex items-start justify-between gap-4 pb-3.5 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-3">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${badge.color}`}>
                     <AppIcon name={badge.icon} size={13} />
                     <span>{badge.label}</span>
                   </span>
-                  <h3 className="font-mono text-xl font-bold text-white">{comp.id}</h3>
+                  <h3 className="font-mono text-xl font-bold text-slate-900">{comp.id}</h3>
                   <StatusBadge label={comp.status} variant={getComputerStatusVariant(comp.status)} />
                 </div>
-                <div className="text-xs text-[#94a3b8] mt-1 flex items-center gap-3">
+                <div className="text-xs text-slate-500 mt-1 flex items-center gap-3 font-medium">
                   <span className="inline-flex items-center gap-1">
-                    <AppIcon name="location" size={11} className="text-slate-500" />
+                    <AppIcon name="location" size={11} className="text-slate-400" />
                     <span>{comp.location}</span>
                   </span>
                   <span>·</span>
@@ -628,77 +634,77 @@ export default function ComputersPage({
                 <button
                   type="button"
                   onClick={() => openEdit(comp)}
-                  className="px-3 py-1.5 bg-[#0ea5e9] text-[#0b1329] text-xs font-bold rounded-lg hover:bg-[#38bdf8] transition-colors"
+                  className="btn-primary"
                 >
                   Edit Workstation
                 </button>
                 <button
                   type="button"
                   onClick={() => setExpandedId(null)}
-                  className="p-1.5 text-[#64748b] hover:text-white rounded-lg hover:bg-[#1e293b] transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   <AppIcon name="close" size={14} />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
               {/* Hardware Spec Breakdown */}
-              <div className="space-y-3 bg-[#0f172a] p-4 rounded-xl border border-[#1e293b]">
-                <h4 className="text-[10px] uppercase tracking-wider font-bold text-[#38bdf8]">
+              <div className="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+                <h4 className="text-[10px] uppercase tracking-wider font-bold text-[#28166F]">
                   Hardware Architecture
                 </h4>
                 <div className="space-y-2 text-xs">
                   <div>
-                    <span className="text-[#64748b] block text-[10px]">CPU</span>
-                    <span className="font-semibold text-white">{comp.cpu}</span>
+                    <span className="text-slate-500 block text-[10px] font-medium">CPU</span>
+                    <span className="font-bold text-slate-900">{comp.cpu}</span>
                   </div>
                   <div>
-                    <span className="text-[#64748b] block text-[10px]">GPU</span>
-                    <span className="text-[#94a3b8]">{comp.gpu || "Integrated Graphics"}</span>
+                    <span className="text-slate-500 block text-[10px] font-medium">GPU</span>
+                    <span className="text-slate-700 font-medium">{comp.gpu || "Integrated Graphics"}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[#64748b] block text-[10px]">Memory</span>
-                      <span className="font-mono text-white">{comp.ram}</span>
+                      <span className="text-slate-500 block text-[10px] font-medium">Memory</span>
+                      <span className="font-mono font-bold text-slate-900">{comp.ram}</span>
                     </div>
                     <div>
-                      <span className="text-[#64748b] block text-[10px]">Storage</span>
-                      <span className="font-mono text-white">{comp.storage}</span>
+                      <span className="text-slate-500 block text-[10px] font-medium">Storage</span>
+                      <span className="font-mono font-bold text-slate-900">{comp.storage}</span>
                     </div>
                   </div>
                   <div>
-                    <span className="text-[#64748b] block text-[10px]">Operating System</span>
-                    <span className="text-[#94a3b8]">{comp.os}</span>
+                    <span className="text-slate-500 block text-[10px] font-medium">Operating System</span>
+                    <span className="text-slate-700 font-medium">{comp.os}</span>
                   </div>
                 </div>
               </div>
 
               {/* Reported Issues History */}
-              <div className="space-y-3 bg-[#0f172a] p-4 rounded-xl border border-[#1e293b]">
+              <div className="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] uppercase tracking-wider font-bold text-rose-400">
-                    Incidents & Issues ({compProblems.length})
+                  <h4 className="text-[10px] uppercase tracking-wider font-bold text-rose-700">
+                    Incidents &amp; Issues ({compProblems.length})
                   </h4>
                 </div>
                 <div className="space-y-2 text-xs max-h-48 overflow-y-auto pr-1">
                   {compProblems.length === 0 ? (
-                    <div className="text-[#64748b] italic py-3 text-center">No problem records</div>
+                    <div className="text-slate-500 italic py-3 text-center">No problem records</div>
                   ) : (
                     compProblems.map(p => (
-                      <div key={p.id} className="p-2.5 rounded-lg bg-[#131d33] border border-[#1e293b] space-y-1">
+                      <div key={p.id} className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[10px] text-[#38bdf8]">{p.id}</span>
+                          <span className="font-mono text-[10px] font-bold text-[#28166F]">{p.id}</span>
                           <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                            p.status === "Open" ? "bg-rose-500/20 text-rose-300" :
-                            p.status === "In Progress" ? "bg-amber-500/20 text-amber-300" :
-                            "bg-emerald-500/20 text-emerald-300"
+                            p.status === "Open" ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                            p.status === "In Progress" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                            "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           }`}>
                             {p.status}
                           </span>
                         </div>
-                        <p className="text-[#94a3b8] text-[11px] line-clamp-2">{p.description}</p>
-                        <div className="text-[10px] text-[#64748b]">By {p.reportedBy} on {p.dateReported}</div>
+                        <p className="text-slate-700 text-[11px] font-medium line-clamp-2">{p.description}</p>
+                        <div className="text-[10px] text-slate-500 font-medium">By {p.reportedBy} on {p.dateReported}</div>
                       </div>
                     ))
                   )}
@@ -706,24 +712,24 @@ export default function ComputersPage({
               </div>
 
               {/* Maintenance History */}
-              <div className="space-y-3 bg-[#0f172a] p-4 rounded-xl border border-[#1e293b]">
+              <div className="space-y-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] uppercase tracking-wider font-bold text-sky-400">
+                  <h4 className="text-[10px] uppercase tracking-wider font-bold text-[#28166F]">
                     Maintenance Jobs ({compMaintenance.length})
                   </h4>
                 </div>
                 <div className="space-y-2 text-xs max-h-48 overflow-y-auto pr-1">
                   {compMaintenance.length === 0 ? (
-                    <div className="text-[#64748b] italic py-3 text-center">No maintenance records</div>
+                    <div className="text-slate-500 italic py-3 text-center">No maintenance records</div>
                   ) : (
                     compMaintenance.map(m => (
-                      <div key={m.id} className="p-2.5 rounded-lg bg-[#131d33] border border-[#1e293b] space-y-1">
+                      <div key={m.id} className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-1 shadow-2xs">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-[10px] text-white font-semibold">{m.maintenanceType}</span>
-                          <span className="text-[10px] font-mono text-[#94a3b8]">{m.scheduledDate}</span>
+                          <span className="font-mono text-[10px] text-slate-900 font-bold">{m.maintenanceType}</span>
+                          <span className="text-[10px] font-mono font-bold text-[#28166F]">{m.scheduledDate}</span>
                         </div>
-                        <p className="text-[#94a3b8] text-[11px] truncate">{m.activity}</p>
-                        <div className="text-[10px] text-[#64748b]">Tech: {m.technician} · {m.status}</div>
+                        <p className="text-slate-700 text-[11px] font-medium truncate">{m.activity}</p>
+                        <div className="text-[10px] text-slate-500 font-medium">Tech: {m.technician} · {m.status}</div>
                       </div>
                     ))
                   )}
@@ -743,19 +749,19 @@ export default function ComputersPage({
         >
           <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
             {formError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-400 flex items-center gap-2">
-                <AppIcon name="warning" size={13} />
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2 font-medium">
+                <AppIcon name="warning" size={13} className="text-rose-600" />
                 <span>{formError}</span>
               </div>
             )}
 
             {/* Section 1: Identification & Room */}
             <div className="space-y-3">
-              <div className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider">
+              <div className="text-xs font-bold text-[#28166F] uppercase tracking-wider">
                 1. Identification &amp; Room Allocation
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label className={lbl}>Workstation ID *</label>
                   <input
@@ -781,7 +787,7 @@ export default function ComputersPage({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className={lbl} style={{ marginBottom: 0 }}>Laboratory &amp; Room Allocation *</label>
-                  <span className="text-[10px] text-[#64748b]">Quick Room Select:</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Quick Room Select:</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">
@@ -790,7 +796,7 @@ export default function ComputersPage({
                       key={loc.id}
                       type="button"
                       onClick={() => setForm({ ...form, location: `${loc.id} — Seat ` })}
-                      className="px-2 py-1.5 rounded-lg bg-[#131d33] border border-[#334155] text-[11px] font-semibold text-[#38bdf8] hover:bg-[#1e293b] hover:border-[#0ea5e9] transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                      className="px-2 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold text-[#28166F] hover:bg-[#28166F] hover:text-white transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <AppIcon name={loc.icon} size={12} />
                       <span>{loc.label}</span>
@@ -808,11 +814,11 @@ export default function ComputersPage({
             </div>
 
             {/* Section 2: Hardware Specs */}
-            <div className="space-y-3 pt-3 border-t border-[#1e293b]">
-              <div className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider">
+            <div className="space-y-3 pt-3 border-t border-slate-200">
+              <div className="text-xs font-bold text-[#28166F] uppercase tracking-wider">
                 2. Hardware Specifications
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label className={lbl}>Processor (CPU)</label>
                   <select className={f} value={form.cpu} onChange={e => setForm({ ...form, cpu: e.target.value })}>
@@ -825,7 +831,7 @@ export default function ComputersPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label className={lbl}>Memory (RAM)</label>
                   <select className={f} value={form.ram} onChange={e => setForm({ ...form, ram: e.target.value })}>
@@ -842,11 +848,11 @@ export default function ComputersPage({
             </div>
 
             {/* Section 3: OS and Status */}
-            <div className="space-y-3 pt-3 border-t border-[#1e293b]">
-              <div className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider">
+            <div className="space-y-3 pt-3 border-t border-slate-200">
+              <div className="text-xs font-bold text-[#28166F] uppercase tracking-wider">
                 3. Operating System &amp; Lifecycle
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
                   <label className={lbl}>Operating System</label>
                   <select className={f} value={form.os} onChange={e => setForm({ ...form, os: e.target.value })}>
@@ -876,19 +882,19 @@ export default function ComputersPage({
             </div>
 
             {/* Modal Actions */}
-            <div className="flex gap-3 pt-4 border-t border-[#1e293b]">
+            <div className="flex gap-3 pt-3.5 border-t border-slate-200">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="flex-1 py-2.5 bg-gradient-to-r from-[#0284c7] to-[#0ea5e9] text-white text-xs font-bold rounded-xl hover:from-[#0369a1] hover:to-[#0284c7] disabled:opacity-50 transition-all shadow-md shadow-[#0284c7]/25"
+                className="btn-primary flex-1 py-2.5"
               >
                 {isSubmitting ? "Saving Workstation..." : editing ? "Save Changes" : "Enroll Workstation"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2.5 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+                className="btn-secondary px-4 py-2.5"
               >
                 Cancel
               </button>
@@ -900,23 +906,23 @@ export default function ComputersPage({
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm && (
         <Modal title="Delete Workstation" subtitle="Permanent Removal from Inventory" onClose={() => setDeleteConfirm(null)}>
-          <div className="space-y-4">
-            <p className="text-sm text-[#94a3b8]">
-              Are you sure you want to delete workstation <span className="font-mono text-white font-bold">{deleteConfirm}</span>?
+          <div className="space-y-4 text-slate-800">
+            <p className="text-sm">
+              Are you sure you want to delete workstation <span className="font-mono text-slate-900 font-bold">{deleteConfirm}</span>?
               All associated problem tickets and maintenance service records will be purged.
             </p>
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold rounded-xl transition-colors shadow-lg shadow-rose-500/25"
+                className="btn-destructive flex-1 py-2.5"
               >
                 Delete Workstation
               </button>
               <button
                 type="button"
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2.5 border border-[#334155] text-[#94a3b8] text-xs font-semibold rounded-xl hover:text-white transition-colors"
+                className="btn-secondary px-4 py-2.5"
               >
                 Cancel
               </button>

@@ -3,13 +3,7 @@
 ===================================================== */
 
 :root {
-  --loader-bg: #f5f5f7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --loader-bg: #0b1425;
-  }
+  --loader-bg: #ffffff;
 }
 
 .loader-overlay {
@@ -60,47 +54,47 @@
   top: 0;
   width: 24px;
   height: 24px;
-  background: #0071e3;
-  box-shadow: 0 0 14px rgba(0, 113, 227, 0.4);
+  background: #28166F;
+  box-shadow: 0 0 14px rgba(40, 22, 111, 0.4);
   animation: animloader2 2s ease infinite;
 }
 
 @keyframes animloader {
   0% {
-    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
-      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+    box-shadow: 0 24px rgba(40, 22, 111, 0), 24px 24px rgba(40, 22, 111, 0),
+      24px 48px rgba(40, 22, 111, 0), 0px 48px rgba(40, 22, 111, 0);
   }
   12% {
-    box-shadow: 0 24px #1d1d1f, 24px 24px rgba(0, 113, 227, 0),
-      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+    box-shadow: 0 24px #28166F, 24px 24px rgba(40, 22, 111, 0),
+      24px 48px rgba(40, 22, 111, 0), 0px 48px rgba(40, 22, 111, 0);
   }
   25% {
-    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f,
-      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+    box-shadow: 0 24px #28166F, 24px 24px #28166F,
+      24px 48px rgba(40, 22, 111, 0), 0px 48px rgba(40, 22, 111, 0);
   }
   37% {
-    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f, 24px 48px #1d1d1f,
-      0px 48px rgba(0, 113, 227, 0);
+    box-shadow: 0 24px #28166F, 24px 24px #28166F, 24px 48px #28166F,
+      0px 48px rgba(40, 22, 111, 0);
   }
   50% {
-    box-shadow: 0 24px #1d1d1f, 24px 24px #1d1d1f, 24px 48px #1d1d1f,
-      0px 48px #1d1d1f;
+    box-shadow: 0 24px #28166F, 24px 24px #28166F, 24px 48px #28166F,
+      0px 48px #28166F;
   }
   62% {
-    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px #1d1d1f,
-      24px 48px #1d1d1f, 0px 48px #1d1d1f;
+    box-shadow: 0 24px rgba(40, 22, 111, 0), 24px 24px #28166F,
+      24px 48px #28166F, 0px 48px #28166F;
   }
   75% {
-    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
-      24px 48px #1d1d1f, 0px 48px #1d1d1f;
+    box-shadow: 0 24px rgba(40, 22, 111, 0), 24px 24px rgba(40, 22, 111, 0),
+      24px 48px #28166F, 0px 48px #28166F;
   }
   87% {
-    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
-      24px 48px rgba(0, 113, 227, 0), 0px 48px #1d1d1f;
+    box-shadow: 0 24px rgba(40, 22, 111, 0), 24px 24px rgba(40, 22, 111, 0),
+      24px 48px rgba(40, 22, 111, 0), 0px 48px #28166F;
   }
   100% {
-    box-shadow: 0 24px rgba(0, 113, 227, 0), 24px 24px rgba(0, 113, 227, 0),
-      24px 48px rgba(0, 113, 227, 0), 0px 48px rgba(0, 113, 227, 0);
+    box-shadow: 0 24px rgba(40, 22, 111, 0), 24px 24px rgba(40, 22, 111, 0),
+      24px 48px rgba(40, 22, 111, 0), 0px 48px rgba(40, 22, 111, 0);
   }
 }
 

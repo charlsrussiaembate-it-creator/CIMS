@@ -15,8 +15,6 @@ interface StatCardProps {
   badge?: string;
   badgeColor?: string;
   icon: string;
-  accentGradient: string;
-  borderColor: string;
   onClick: () => void;
 }
 
@@ -25,32 +23,33 @@ function StatCard({
   value,
   sub,
   badge,
-  badgeColor = "bg-[#0ea5e9]/15 text-[#38bdf8] border-[#0ea5e9]/30",
+  badgeColor = "bg-slate-100 text-slate-700 border-slate-200",
   icon,
-  borderColor,
   onClick,
 }: StatCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`rounded-xl bg-[#0f172a] border ${borderColor} p-5 cursor-pointer transition-all duration-200 hover:border-[#475569] hover:bg-[#131d33] group`}
+      className="rounded-xl bg-white border border-slate-200 p-4 hover:border-slate-300 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between h-full group shadow-xs"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-[#1e293b] border border-[#334155] flex items-center justify-center text-slate-200">
-          <AppIcon name={icon} size={18} />
+      <div>
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-9 h-9 rounded-lg bg-[#28166F]/10 text-[#28166F] border border-[#28166F]/15 flex items-center justify-center">
+            <AppIcon name={icon} size={17} />
+          </div>
+          {badge && (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border font-sans ${badgeColor}`}>
+              {badge}
+            </span>
+          )}
         </div>
-        {badge && (
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border font-sans ${badgeColor}`}>
-            {badge}
-          </span>
-        )}
+
+        <div className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">{value}</div>
+        <div className="text-xs font-bold text-slate-800 mt-1 font-sans">{label}</div>
+        <div className="text-[11px] font-medium text-slate-500 mt-0.5 font-sans truncate">{sub}</div>
       </div>
 
-      <div className="text-3xl font-serif font-bold text-white tracking-tight">{value}</div>
-      <div className="text-xs font-bold text-slate-200 mt-1 font-sans">{label}</div>
-      <div className="text-[11px] font-semibold text-slate-400 mt-0.5 font-sans">{sub}</div>
-
-      <div className="mt-3 pt-3 border-t border-[#1e293b] flex items-center justify-between text-[11px] text-sky-400 font-bold font-sans">
+      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-[#28166F] font-bold font-sans">
         <span>View Details</span>
         <span className="group-hover:translate-x-0.5 transition-transform">→</span>
       </div>
@@ -96,126 +95,89 @@ export default function AdminDashboard({ data, setPage }: Props) {
 
   const totalComps = computers.length || 1;
   const activePercent = Math.round((active / totalComps) * 100);
-  const attentionPercent = Math.round((needsAttention / totalComps) * 100);
-  const decommissionedPercent = Math.round((decommissioned / totalComps) * 100);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans">
-      {/* Top Banner & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1e293b]">
-        <div>
-          <h1 className="text-2xl font-bold font-serif text-white tracking-tight">Admin Overview</h1>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setPage("computers")}
-            className="btn-primary"
-          >
-            <AppIcon name="plus" size={13} />
-            <span>Add Workstation</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage("maintenance")}
-            className="btn-secondary font-bold"
-          >
-            <AppIcon name="maintenance" size={13} />
-            <span>Schedule Job</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPage("problems")}
-            className="btn-secondary font-bold text-rose-300 hover:text-rose-200"
-          >
-            <AppIcon name="warning" size={13} />
-            <span>Log Issue</span>
-          </button>
-        </div>
+    <div className="p-5 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans">
+      {/* Top Banner */}
+      <div className="pb-3 border-b border-slate-200">
+        <h1 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-tight">Admin Overview</h1>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards Grid - Perfectly Aligned */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
           label="Total Inventory"
           value={computers.length}
           sub={`${active} operational in labs`}
           badge={`${activePercent}% Active`}
-          badgeColor="bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+          badgeColor="bg-emerald-50 text-emerald-700 border-emerald-200"
           icon="computers"
-          accentGradient="bg-sky-500"
-          borderColor="border-[#0ea5e9]/30"
           onClick={() => setPage("computers")}
         />
         <StatCard
           label="Requires Attention"
           value={needsAttention}
-          sub={`${underRepair} under repair · ${needsMaintenance} scheduled`}
+          sub={`${underRepair} repair · ${needsMaintenance} scheduled`}
           badge={needsAttention > 0 ? "Action Needed" : "Optimal"}
-          badgeColor={needsAttention > 0 ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"}
+          badgeColor={needsAttention > 0 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}
           icon="maintenance"
-          accentGradient="bg-amber-500"
-          borderColor="border-amber-500/30"
           onClick={() => setPage("computers")}
         />
         <StatCard
           label="Reported Problems"
           value={openProblems}
           sub={`${inProgressProblems} currently being fixed`}
-          badge={openProblems > 0 ? `${openProblems} Unresolved` : "All Solved"}
-          badgeColor={openProblems > 0 ? "bg-rose-500/15 text-rose-300 border-rose-500/30" : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"}
+          badge={openProblems > 0 ? `${openProblems} Open` : "All Solved"}
+          badgeColor={openProblems > 0 ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}
           icon="warning"
-          accentGradient="bg-rose-500"
-          borderColor="border-rose-500/30"
           onClick={() => setPage("problems")}
         />
         <StatCard
           label="Maintenance Operations"
           value={scheduledMaintenance + inProgressMaintenance}
-          sub={`${completedMaintenance} successfully finished`}
-          badge={`${completedMaintenance} Completed`}
-          badgeColor="bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+          sub={`${completedMaintenance} finished successfully`}
+          badge={`${completedMaintenance} Done`}
+          badgeColor="bg-emerald-50 text-emerald-700 border-emerald-200"
           icon="tool"
-          accentGradient="bg-emerald-500"
-          borderColor="border-emerald-500/30"
           onClick={() => setPage("maintenance")}
         />
       </div>
 
-      {/* Fleet Health Meter */}
-      <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
-          <div>
-            <h2 className="text-xs font-black text-slate-200 uppercase tracking-wider">
-              Fleet Health &amp; Readiness Meter
+      {/* Fleet Health Meter - Compact and High-Density */}
+      <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <AppIcon name="pulse" size={14} className="text-emerald-600" />
+            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-sans">
+              Fleet Health &amp; Readiness
             </h2>
-            <p className="text-[11px] font-bold text-slate-400 mt-0.5">
-              Live status ratio of all registered laboratory computer workstations
-            </p>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {activePercent}% Operational
+            </span>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              Active ({active})
+
+          <div className="flex items-center gap-3 text-[11px] font-sans flex-wrap">
+            <span className="flex items-center gap-1.5 font-bold text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Active: {active}
             </span>
-            <span className="flex items-center gap-1.5 font-bold text-amber-400">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              Maintenance ({needsMaintenance})
+            <span className="flex items-center gap-1.5 font-bold text-amber-700">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Maintenance: {needsMaintenance}
             </span>
-            <span className="flex items-center gap-1.5 font-bold text-orange-400">
-              <span className="w-2 h-2 rounded-full bg-orange-400" />
-              Under Repair ({underRepair})
+            <span className="flex items-center gap-1.5 font-bold text-orange-700">
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              Under Repair: {underRepair}
             </span>
-            <span className="flex items-center gap-1.5 font-bold text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-slate-500" />
-              Decommissioned ({decommissioned})
+            <span className="flex items-center gap-1.5 font-bold text-slate-500">
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              Retired: {decommissioned}
             </span>
           </div>
         </div>
 
         {/* Multi-segment progress bar */}
-        <div className="w-full h-3.5 bg-[#131d33] rounded-full overflow-hidden flex shadow-inner border border-[#1e293b]">
+        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
           <div
             style={{ width: `${activePercent}%` }}
             className="h-full bg-emerald-500 transition-all duration-500"
@@ -233,81 +195,64 @@ export default function AdminDashboard({ data, setPage }: Props) {
           />
           <div
             style={{ width: `${(decommissioned / totalComps) * 100}%` }}
-            className="h-full bg-slate-600 transition-all duration-500"
+            className="h-full bg-slate-400 transition-all duration-500"
             title={`Decommissioned: ${decommissioned}`}
           />
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-[#1e293b] text-center">
-          <div>
-            <div className="text-base font-black text-white">{activePercent}%</div>
-            <div className="text-[10px] font-bold text-slate-300 uppercase">Operational</div>
-          </div>
-          <div>
-            <div className="text-base font-black text-amber-400">{attentionPercent}%</div>
-            <div className="text-[10px] font-bold text-amber-300/80 uppercase">In Service Queue</div>
-          </div>
-          <div>
-            <div className="text-base font-black text-sky-400">{computers.length}</div>
-            <div className="text-[10px] font-bold text-sky-300/80 uppercase">Total Units</div>
-          </div>
-          <div>
-            <div className="text-base font-black text-slate-300">{decommissionedPercent}%</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase">Retired</div>
-          </div>
         </div>
       </div>
 
       {/* Main 2-Column Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left Column (2 Cols wide): Active Action Queues */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           {/* Action Queue: Recent Problems */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <AppIcon name="warning" size={16} className="text-rose-400" />
+          <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-center">
+                  <AppIcon name="warning" size={15} className="text-rose-600" />
+                </div>
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-wide">Recent Problem Reports</h2>
-                  <p className="text-[11px] font-bold text-slate-400">Issues reported by students and lab faculty</p>
+                  <h2 className="font-serif text-sm font-bold text-slate-900 tracking-tight">Recent Problem Reports</h2>
+                  <p className="text-[11px] font-medium text-slate-500">Issues reported across laboratory workstations</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setPage("problems")}
-                className="text-xs font-bold text-[#0ea5e9] hover:text-[#38bdf8] transition-colors"
+                className="text-xs font-semibold text-[#28166F] hover:text-[#1c0f4e] transition-colors"
               >
                 Open Ticket Manager →
               </button>
             </div>
 
             {recentProblems.length === 0 ? (
-              <div className="p-8 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-bold text-[#64748b]">
+              <div className="p-5 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-500">
                 No active problems currently logged. All workstations running smoothly.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {recentProblems.map(p => (
                   <div
                     key={p.id}
-                    className="p-4 rounded-xl bg-[#131d33] border border-[#1e293b] hover:border-[#334155] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-lg bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-[#38bdf8]">{p.computerId}</span>
-                        <span className="font-mono text-[10px] font-bold text-[#64748b]">{p.id}</span>
+                        <span className="font-mono text-xs font-bold text-[#28166F]">{p.computerId}</span>
+                        <span className="font-mono text-[10px] text-slate-500 font-medium">{p.id}</span>
                         <StatusBadge label={p.status} variant={getProblemStatusVariant(p.status)} />
                       </div>
-                      <p className="text-xs font-bold text-white leading-relaxed line-clamp-1">{p.description}</p>
-                      <div className="text-[10px] font-semibold text-slate-400">
-                        Reported by <span className="font-bold text-slate-200">{p.reportedBy}</span> on <span className="font-mono font-bold">{p.dateReported}</span>
+                      <p className="text-xs font-semibold text-slate-800 leading-snug line-clamp-1">{p.description}</p>
+                      <div className="text-[10px] text-slate-500 font-medium">
+                        Reported by <span className="font-bold text-slate-700">{p.reportedBy}</span> on <span className="font-mono">{p.dateReported}</span>
                       </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setPage("problems")}
-                      className="px-3 py-1.5 bg-[#0f172a] border border-[#334155] text-xs font-bold text-slate-300 hover:text-white hover:border-[#0ea5e9] rounded-lg transition-colors flex-shrink-0 self-end sm:self-center"
+                      className="px-3 py-1.5 bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:text-[#28166F] hover:border-[#28166F]/40 shadow-2xs rounded-md transition-colors flex-shrink-0 self-end sm:self-center"
                     >
                       Manage
                     </button>
@@ -318,26 +263,28 @@ export default function AdminDashboard({ data, setPage }: Props) {
           </div>
 
           {/* Action Queue: Upcoming Maintenance */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <AppIcon name="maintenance" size={16} className="text-sky-400" />
+          <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center">
+                  <AppIcon name="maintenance" size={15} className="text-[#28166F]" />
+                </div>
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-wide">Upcoming Maintenance Schedule</h2>
-                  <p className="text-[11px] font-bold text-slate-400">Scheduled preventive cleaning and hardware upgrades</p>
+                  <h2 className="font-serif text-sm font-bold text-slate-900 tracking-tight">Upcoming Maintenance Schedule</h2>
+                  <p className="text-[11px] font-medium text-slate-500">Scheduled preventive cleaning and system servicing</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setPage("maintenance")}
-                className="text-xs font-bold text-[#0ea5e9] hover:text-[#38bdf8] transition-colors"
+                className="text-xs font-semibold text-[#28166F] hover:text-[#1c0f4e] transition-colors"
               >
                 View Full Calendar →
               </button>
             </div>
 
             {upcomingMaintenance.length === 0 ? (
-              <div className="p-8 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-bold text-[#64748b]">
+              <div className="p-5 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-500">
                 No pending maintenance jobs on the schedule.
               </div>
             ) : (
@@ -345,20 +292,20 @@ export default function AdminDashboard({ data, setPage }: Props) {
                 {upcomingMaintenance.map(m => (
                   <div
                     key={m.id}
-                    className="p-4 rounded-xl bg-[#131d33] border border-[#1e293b] hover:border-[#334155] transition-all space-y-2"
+                    className="p-3.5 rounded-lg bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 hover:bg-white transition-all space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-[#0ea5e9]">{m.computerId}</span>
+                      <span className="font-mono text-xs font-bold text-[#28166F]">{m.computerId}</span>
                       <StatusBadge label={m.status} variant={getMaintenanceStatusVariant(m.status)} />
                     </div>
-                    <div className="text-xs font-bold text-white">{m.maintenanceType}</div>
-                    <p className="text-[11px] font-semibold text-slate-300 line-clamp-1">{m.activity}</p>
-                    <div className="pt-2 border-t border-[#1e293b] flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                    <div className="text-xs font-bold text-slate-900">{m.maintenanceType}</div>
+                    <p className="text-[11px] font-medium text-slate-600 line-clamp-1">{m.activity}</p>
+                    <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-[10px] text-slate-500 font-medium">
                       <span className="inline-flex items-center gap-1">
                         <AppIcon name="user" size={10} className="text-slate-400" />
-                        <span className="font-bold text-slate-300">{m.technician}</span>
+                        <span className="font-bold text-slate-700">{m.technician}</span>
                       </span>
-                      <span className="font-mono font-bold text-sky-400">{m.scheduledDate}</span>
+                      <span className="font-mono font-bold text-[#28166F]">{m.scheduledDate}</span>
                     </div>
                   </div>
                 ))}
@@ -368,55 +315,55 @@ export default function AdminDashboard({ data, setPage }: Props) {
         </div>
 
         {/* Right Column (1 Col wide): Live Activity Stream & Quick Stats */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Live Activity Stream */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3.5">
               <div>
-                <h2 className="text-sm font-black text-white tracking-wide">Live Activity Stream</h2>
-                <p className="text-[11px] font-bold text-slate-400">Real-time audit log feed</p>
+                <h2 className="font-serif text-sm font-bold text-slate-900 tracking-tight">Live Activity Stream</h2>
+                <p className="text-[11px] font-medium text-slate-500">Real-time audit log feed</p>
               </div>
               <button
                 type="button"
                 onClick={() => setPage("audit")}
-                className="text-xs font-bold text-[#0ea5e9] hover:text-[#38bdf8] transition-colors"
+                className="text-xs font-semibold text-[#28166F] hover:text-[#1c0f4e] transition-colors"
               >
                 Full Log →
               </button>
             </div>
 
             {recentLogs.length === 0 ? (
-              <div className="p-6 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-semibold text-[#64748b]">
+              <div className="p-5 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-500">
                 No audit log events recorded yet.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {recentLogs.map(log => {
                   const isAdmin = log.role === "admin";
                   return (
                     <div
                       key={log.id}
-                      className="p-3 rounded-xl bg-[#131d33] border border-[#1e293b] space-y-1 hover:border-[#334155] transition-all"
+                      className="p-3 rounded-lg bg-slate-50/70 border border-slate-200/80 space-y-1 hover:border-slate-300 hover:bg-white transition-all"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
                               isAdmin
-                                ? "bg-sky-500/15 text-sky-400 border border-sky-500/25"
-                                : "bg-purple-500/15 text-purple-400 border border-purple-500/25"
+                                ? "bg-[#28166F]/10 text-[#28166F] border border-[#28166F]/20"
+                                : "bg-indigo-50 text-[#28166F] border border-indigo-200"
                             }`}
                           >
                             {log.role}
                           </span>
-                          <span className="text-xs font-bold text-white">{log.action}</span>
+                          <span className="text-xs font-bold text-slate-900">{log.action}</span>
                         </div>
-                        <span className="font-mono font-bold text-[9px] text-[#64748b]">
+                        <span className="font-mono font-medium text-[10px] text-slate-500">
                           {log.timestamp.split(" ")[1] || log.timestamp}
                         </span>
                       </div>
-                      <p className="text-[11px] font-semibold text-slate-300 line-clamp-1">{log.details}</p>
-                      <div className="text-[10px] font-semibold text-slate-400">by <span className="font-bold text-slate-300">{log.actor}</span></div>
+                      <p className="text-[11px] font-medium text-slate-700 line-clamp-1">{log.details}</p>
+                      <div className="text-[10px] text-slate-500">by <span className="font-bold text-slate-800">{log.actor}</span></div>
                     </div>
                   );
                 })}
@@ -425,27 +372,27 @@ export default function AdminDashboard({ data, setPage }: Props) {
           </div>
 
           {/* Lab Allocation Quick Breakdown */}
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-6">
-            <h2 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-3">
+          <div className="bg-white border border-slate-200 shadow-xs rounded-xl p-5">
+            <h2 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase mb-3">
               Workstation Distribution
             </h2>
             {Object.entries(labCounts).length === 0 ? (
-              <div className="p-4 text-center bg-[#131d33] border border-[#1e293b] rounded-xl text-xs font-semibold text-[#64748b]">
+              <div className="p-4 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-500">
                 No workstations registered yet.
               </div>
             ) : (
               <div className="space-y-2.5">
                 {Object.entries(labCounts).map(([lab, count]) => (
                   <div key={lab} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300 font-bold">{lab}</span>
+                    <span className="text-slate-700 font-medium">{lab}</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-20 h-1.5 rounded-full bg-[#1e293b] overflow-hidden">
+                      <div className="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                         <div
-                          className="h-full bg-[#0ea5e9] rounded-full"
+                          className="h-full bg-[#28166F] rounded-full"
                           style={{ width: `${(count / totalComps) * 100}%` }}
                         />
                       </div>
-                      <span className="font-mono text-white font-black w-6 text-right">{count}</span>
+                      <span className="font-mono text-slate-900 font-bold w-6 text-right">{count}</span>
                     </div>
                   </div>
                 ))}
